@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
 import { formError, requireGuild } from '#lib/server/guard.ts';
+import { serverIdFromChannelLink } from '@row/shared';
 import { formToObject, guildProfileSchema, scheduleSchema } from '#lib/schemas.ts';
 import { getSchedules, applyScheduleChange } from '#lib/server/schedule.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -30,7 +31,10 @@ export const load: PageServerLoad = async (event) => {
 			server: profile?.server ?? '',
 			discordGuildId: profile?.discordGuildId ?? '',
 			notifyChannelId: profile?.notifyChannelId ?? '',
-			imageChannelId: profile?.imageChannelId ?? '',
+			imageGlMainChannelId: profile?.imageGlMainChannelId ?? '',
+			imageGlSubChannelId: profile?.imageGlSubChannelId ?? '',
+			imageSiegeChannelId: profile?.imageSiegeChannelId ?? '',
+			imagePolarityChannelId: profile?.imagePolarityChannelId ?? '',
 			auctionChannelId: profile?.auctionChannelId ?? ''
 		}
 	};
@@ -68,9 +72,23 @@ export const actions: Actions = {
 	save: async (event) => {
 		// guild:update ครอบคลุมรายละเอียด; Discord channel ต้อง guild:configure_discord (owner เท่านั้นเหมือนกัน)
 		const ctx = await requireGuild(event, ['guild', 'update']);
-		const parsed = guildProfileSchema.safeParse(formToObject(await event.request.formData()));
-		if (!parsed.success) return formError('error.invalid');
-		const { name, ...profile } = parsed.data;
+		const raw = formToObject(await event.request.formData()) as Record<string, unknown>;
+		// ช่อง server ว่าง แต่วางลิงก์ห้องมา → เติม server ID จากลิงก์ให้
+		if (typeof raw.discordGuildId !== 'string' || !raw.discordGuildId.trim()) {
+			for (const v of Object.values(raw)) {
+				const sid = typeof v === 'string' ? serverIdFromChannelLink(v) : null;
+				if (sid) {
+					raw.discordGuildId = sid;
+					break;
+				}
+			}
+		}
+		const parsed = guildProfileSchema.safeParse(raw);
+		if (!parsed.success)
+			return formError(parsed.error.issues.some((i) => String(i.path[0]).endsWith('Id')) ? 'error.invalidDiscordId' : 'error.invalid');
+		const { name, ...fields } = parsed.data;
+		// ช่องที่ล้างว่างต้องเขียนเป็น null (undefined ถูก drizzle ข้าม → ล้างค่าเดิมไม่ได้)
+		const profile = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v ?? null])) as { [K in keyof typeof fields]: string | null };
 
 		await db.transaction(async (tx) => {
 			await tx.update(organization).set({ name }).where(eq(organization.id, ctx.guild.id));

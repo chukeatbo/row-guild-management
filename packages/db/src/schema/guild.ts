@@ -13,7 +13,11 @@ export const guildProfile = pgTable('guild_profile', {
   discordGuildId: text('discord_guild_id'),
   // channel สำหรับ scheduler / ส่งรูป / ประมูล
   notifyChannelId: text('notify_channel_id'),
-  imageChannelId: text('image_channel_id'),
+  // ห้องส่งรูปปาร์ตี้แยกตามกิจกรรม (GL แยกสนามบน/ล่าง)
+  imageGlMainChannelId: text('image_gl_main_channel_id'),
+  imageGlSubChannelId: text('image_gl_sub_channel_id'),
+  imageSiegeChannelId: text('image_siege_channel_id'),
+  imagePolarityChannelId: text('image_polarity_channel_id'),
   auctionChannelId: text('auction_channel_id'),
   suspended: boolean('suspended').notNull().default(false),
   updatedAt: updatedAt()

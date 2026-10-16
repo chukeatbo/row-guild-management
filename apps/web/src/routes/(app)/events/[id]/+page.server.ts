@@ -1,8 +1,10 @@
 import { can } from '@row/auth/permissions';
+import { eventImageTargets } from '@row/shared';
 import { character, eventLeave, guildEvent, party, partyGroup, partySlot } from '@row/db';
 import { error } from '@sveltejs/kit';
 import { and, asc, eq, inArray, max, sql } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
+import { enqueueDiscord, guildChannels } from '#lib/server/discord.ts';
 import { db } from '#lib/server/db.ts';
 import { loadEvent, myCharacterIds, groupLetter } from '#lib/server/events.ts';
 import { formError, requireGuild } from '#lib/server/guard.ts';
@@ -82,7 +84,8 @@ export const load: PageServerLoad = async (event) => {
 			full,
 			canAssign,
 			canManage: allowed(ctx, 'event', 'update'),
-			canLock: full
+			canLock: full,
+			canSend: allowed(ctx, 'party', 'send_discord')
 		}
 	};
 };
@@ -280,6 +283,22 @@ export const actions: Actions = {
 		const position = (pos ?? -1) + 1;
 		await db.insert(party).values({ eventId: ev.id, groupId: g.id, name: `P${position + 1}`, position });
 		await writeAudit({ organizationId: ctx.guild.id, actorUserId: ctx.user.id, action: 'party.create', targetType: 'guild_event', targetId: ev.id });
+		return { ok: true };
+	},
+
+	/** ส่งรูปปาร์ตี้ลงห้อง Discord (bot แคปหน้า /render/event/[id] แล้วโพสต์) */
+	sendDiscord: async (event) => {
+		const ctx = await requireGuild(event, ['party', 'send_discord']);
+		const ev = await loadEvent(ctx.guild.id, event.params.id);
+		if (!ev) error(404);
+		// GL = 2 รูป (สนามบน/ล่าง) ไปคนละห้อง; ห้องที่ไม่ได้ตั้งข้าม
+		const targets = eventImageTargets(ev.type, (await guildChannels(ctx.guild.id)).image);
+		if (!targets.length) return formError('error.noChannel');
+		const results = await Promise.all(
+			targets.map((t) => enqueueDiscord({ type: 'send_image', kind: 'event', orgId: ctx.guild.id, targetId: ev.id, ...t }))
+		);
+		if (results.some((ok) => !ok)) return formError('error.discordUnavailable', 503);
+		await writeAudit({ organizationId: ctx.guild.id, actorUserId: ctx.user.id, action: 'party.send_discord', targetType: 'guild_event', targetId: ev.id });
 		return { ok: true };
 	},
 

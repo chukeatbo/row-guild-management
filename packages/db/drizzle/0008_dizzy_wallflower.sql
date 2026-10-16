@@ -1,0 +1,1 @@
+ALTER TABLE "guild_profile" DROP COLUMN "image_channel_id";

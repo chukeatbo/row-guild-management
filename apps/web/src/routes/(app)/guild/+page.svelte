@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Check } from '@lucide/svelte';
+	import { extractDiscordId, isDiscordId } from '@row/shared';
 	import { weekdayName } from '#lib/datetime.ts';
 	import { useLocale, useT, type MessageKey } from '#lib/i18n/index.ts';
 
@@ -11,11 +12,23 @@
 	const locale = useLocale();
 	const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // จันทร์เป็นวันแรก
 
+	/** วางลิงก์ที่คัดลอกมา → แปลงเป็น ID ให้ทันทีตอนออกจากช่อง */
+	const normalize = (e: FocusEvent) => {
+		const el = e.currentTarget as HTMLInputElement;
+		const id = extractDiscordId(el.value, el.name === 'discordGuildId' ? 'server' : 'channel');
+		if (isDiscordId(id)) el.value = id;
+	};
+
 	const fields = [
 		{ name: 'discordGuildId', label: 'guild.discordGuildId' },
 		{ name: 'notifyChannelId', label: 'guild.notifyChannel' },
-		{ name: 'imageChannelId', label: 'guild.imageChannel' },
 		{ name: 'auctionChannelId', label: 'guild.auctionChannel' }
+	] as const;
+	const imageFields = [
+		{ name: 'imageGlMainChannelId', label: 'guild.imageGlMain' },
+		{ name: 'imageGlSubChannelId', label: 'guild.imageGlSub' },
+		{ name: 'imageSiegeChannelId', label: 'guild.imageSiege' },
+		{ name: 'imagePolarityChannelId', label: 'guild.imagePolarity' }
 	] as const;
 </script>
 
@@ -57,13 +70,26 @@
 
 	<fieldset disabled={!data.canEditGuild} class="card space-y-4">
 		<h2 class="font-medium">{t('guild.discordSection')}</h2>
+		<p class="text-xs text-muted-foreground">{t('guild.discordHint')}</p>
 		<div class="grid gap-4 sm:grid-cols-2">
 			{#each fields as f (f.name)}
 				<div>
 					<label class="label" for={f.name}>{t(f.label as MessageKey)}</label>
-					<input id={f.name} name={f.name} inputmode="numeric" class="input font-mono" value={data.guild[f.name]} />
+					<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono" value={data.guild[f.name]} />
 				</div>
 			{/each}
+		</div>
+		<div class="border-t border-border pt-4">
+			<h3 class="text-sm font-medium">{t('guild.imageSection')}</h3>
+			<p class="mt-1 text-xs text-muted-foreground">{t('guild.imageHint')}</p>
+			<div class="mt-3 grid gap-4 sm:grid-cols-2">
+				{#each imageFields as f (f.name)}
+					<div>
+						<label class="label" for={f.name}>{t(f.label as MessageKey)}</label>
+						<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono" value={data.guild[f.name]} />
+					</div>
+				{/each}
+			</div>
 		</div>
 	</fieldset>
 

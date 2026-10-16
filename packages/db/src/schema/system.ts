@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, pgEnum, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, pgEnum, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createdAt, id, ts } from './_helpers';
 import { organization, user } from './auth';
 import { guildEvent } from './event';
@@ -24,6 +24,24 @@ export const notificationSchedule = pgTable(
     createdAt: createdAt()
   },
   (t) => [index('notification_due_idx').on(t.enabled, t.runAt)]
+);
+
+/**
+ * บันทึกว่าแจ้งเตือนอัตโนมัติของ event รอบนั้น (starts_at) ส่งไปแล้ว — กันส่งซ้ำเมื่อ bot รีสตาร์ท/รันหลายตัว
+ * insert ... on conflict do nothing แล้วดูว่าได้แถวไหม = "จองสิทธิ์ส่ง"
+ */
+export const notificationSent = pgTable(
+  'notification_sent',
+  {
+    id: id(),
+    eventId: text('event_id')
+      .notNull()
+      .references(() => guildEvent.id, { onDelete: 'cascade' }),
+    startsAt: ts('starts_at').notNull(),
+    kind: text('kind').notNull(), // เช่น reminder_60
+    sentAt: createdAt()
+  },
+  (t) => [uniqueIndex('notification_sent_uq').on(t.eventId, t.startsAt, t.kind)]
 );
 
 /** ทุก mutation สำคัญต้องเขียนที่นี่ */

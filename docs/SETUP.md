@@ -47,10 +47,20 @@ pnpm typecheck
 - CLI คือ `@better-auth/cli` (bin ชื่อ `better-auth`) ติดตั้งใน `packages/auth`; config สำหรับ CLI อยู่ที่ `packages/auth/src/cli.ts`
 - Vite config โหลด `.env` จาก root ให้ `process.env` (เพราะ `@row/*` อ่านผ่าน process.env)
 - ยังไม่ได้ติดตั้ง Tailwind / shadcn-svelte (ทำใน Phase 1)
-- `apps/bot` ยังไม่สร้าง (`pnpm dev:bot` ใช้ไม่ได้จนกว่าจะถึง Phase ที่เกี่ยวข้อง)
 
 ## Super Admin คนแรก
 1. `pnpm dev:web` แล้ว login ด้วย Discord หนึ่งครั้ง (เพื่อสร้าง user)
 2. `pnpm db:grant-admin <Discord ID ของคุณ>` (เปิด Developer Mode ใน Discord → คลิกขวาโปรไฟล์ → Copy User ID)
 3. รีเฟรช — จะเห็นเมนู Admin → แท็บ "กิลด์" → สร้างกิลด์ (ใส่ Discord ID เจ้าของ หรือเว้นว่างให้ตัวเองเป็น owner)
 4. ผู้เล่นอื่น login แล้วส่ง Discord ID ให้ Guild Master/Officer เพิ่มที่หน้า สมาชิก → สมาชิกกิลด์
+
+## Discord bot (Phase 6)
+1. Developer Portal → Bot: คัดลอก token ใส่ `DISCORD_BOT_TOKEN` (ไม่ต้องเปิด intent พิเศษสำหรับ Phase นี้ — ใช้ REST ส่งข้อความอย่างเดียว)
+2. เชิญบอทเข้าเซิร์ฟเวอร์ (ต้องมีสิทธิ์ View Channel / Send Messages / Attach Files):
+   `https://discord.com/oauth2/authorize?client_id=<DISCORD_CLIENT_ID>&scope=bot&permissions=52224`
+3. ตั้ง `RENDER_SECRET` เป็นค่าสุ่มยาวๆ (ห้ามใช้ `change-me` — เว็บและบอทปฏิเสธ) แล้ว **รีสตาร์ท dev:web** ให้โหลดค่าใหม่
+4. ตั้ง Channel ID ที่หน้า Guild (แจ้งเตือน / ส่งรูป / ประมูล)
+5. ติดตั้งเบราว์เซอร์สำหรับแคปรูป: `npx playwright-core install chromium` หรือตั้ง `CHROMIUM_PATH` เป็น Chrome/Edge ที่มีอยู่
+6. `docker compose up -d` (Redis) แล้ว `pnpm dev:web` + `pnpm dev:bot` (เปิดสองเทอร์มินัล)
+
+bot ทำ: worker รับงานจากเว็บ (ส่งรูป, แจ้งลา, แจ้งผู้ได้ไอเทม) + scheduler ทุกนาที (เลื่อนรอบ event ผ่าน `POST /api/internal/rollover`, เตือนก่อนเริ่ม 60 นาที พร้อมรูปปาร์ตี้)

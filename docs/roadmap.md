@@ -7,7 +7,7 @@
 | 0 | Scaffold, Better Auth + Discord login, schema, permissions | — | ✅ เสร็จ |
 | 1 | Guild + สมาชิก/ตัวละคร + กราฟอาชีพ + Super Admin master data | 1, 2, 12 | ✅ เสร็จ |
 | 2 | Party Builder (GL / Siege / Polarity) + ล็อก + bench | 3, 4, 5 | ✅ เสร็จ (ยังไม่มี bench) |
-| 3 | ระบบลา + deadline | 6 | ✅ เสร็จ |
+| 3 | ระบบลา + deadline | 6 | Bot + Scheduler + Send to Discord (render route + Playwright) | 8, 10 | ✅ เสร็จ (ยังไม่ทดสอบกับ Discord จริง) |
 | 4 | คิวประมูล | 7 | **กติกาคิวประมูล** |
 | 5 | จองบอสดันกิลด์ | 9 | — |
 | 6 | Bot + Scheduler + Send to Discord (render route + Playwright) | 8, 10 | — |

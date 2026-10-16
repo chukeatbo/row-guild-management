@@ -1,4 +1,4 @@
-import { CLASS_ROLES, EVENT_STATUSES, EVENT_TYPES } from '@row/shared';
+import { CLASS_ROLES, EVENT_STATUSES, EVENT_TYPES, extractDiscordId, isDiscordId } from '@row/shared';
 import { z } from 'zod';
 import { fromInput } from './datetime';
 
@@ -14,6 +14,13 @@ const optText = (max: number) =>
 	z.preprocess(
 		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
 		z.string().trim().max(max).optional()
+	);
+
+/** ช่อง server/channel ID ของกิลด์: รับ ID หรือลิงก์ที่คัดลอกมา (ว่างได้) → เก็บเป็น ID ล้วน */
+const discordRef = (part: 'server' | 'channel') =>
+	z.preprocess(
+		(v) => (typeof v === 'string' ? (v.trim() === '' ? undefined : extractDiscordId(v, part)) : v),
+		z.string().refine(isDiscordId).optional()
 	);
 
 export const discordIdSchema = z.string().trim().regex(/^\d{15,22}$/);
@@ -48,10 +55,13 @@ export const guildProfileSchema = z.object({
 	name: nameSchema,
 	description: optText(1000),
 	server: optText(60),
-	discordGuildId: optText(32),
-	notifyChannelId: optText(32),
-	imageChannelId: optText(32),
-	auctionChannelId: optText(32)
+	discordGuildId: discordRef('server'),
+	notifyChannelId: discordRef('channel'),
+	imageGlMainChannelId: discordRef('channel'),
+	imageGlSubChannelId: discordRef('channel'),
+	imageSiegeChannelId: discordRef('channel'),
+	imagePolarityChannelId: discordRef('channel'),
+	auctionChannelId: discordRef('channel')
 });
 
 export const createGuildSchema = z.object({

@@ -8,6 +8,7 @@
 		LockOpen,
 		Pencil,
 		Plus,
+		Send,
 		Trash2,
 		TriangleAlert
 	} from '@lucide/svelte';
@@ -159,6 +160,13 @@
 		await e.update();
 		close?.();
 	};
+	let sending = $state(false);
+	const sendSubmit = () => async (e: { result: any }) => {
+		sending = false;
+		const failed = e.result.type === 'failure';
+		toast = { key: failed ? (e.result.data?.error ?? 'error.generic') : 'discord.queued' };
+		setTimeout(() => (toast = null), 3500);
+	};
 	let toast = $state<{ key: MessageKey; params?: Record<string, number> } | null>(null);
 
 	const overCap = (f: { maxMembers?: number; n: number }) => !!f.maxMembers && f.n > f.maxMembers;
@@ -196,6 +204,11 @@
 			{:else if saveState === 'saved'}<span class="inline-flex items-center gap-1 text-success"><Check size={14} />{t('builder.saved')}</span>
 			{:else if saveState === 'error'}<span class="text-danger">{t('builder.saveFailed')}</span>{/if}
 		</span>
+		{#if data.perms.canSend}
+			<form method="POST" action="?/sendDiscord" use:enhance={() => { sending = true; return sendSubmit(); }}>
+				<button class="btn-secondary" disabled={sending || saveState === 'saving'}><Send size={15} />{t('discord.send')}</button>
+			</form>
+		{/if}
 		{#if data.perms.canManage}
 			<button class="btn-secondary" onclick={() => { formError = null; editOpen = true; }}><Pencil size={15} />{t('common.edit')}</button>
 		{/if}

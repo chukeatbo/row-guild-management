@@ -3,6 +3,7 @@ import { auction, auctionAward, auctionEntry, auctionItem, character } from '@ro
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
+import { enqueueDiscord, guildChannels } from '#lib/server/discord.ts';
 import { formError, isUniqueViolation, requireGuild } from '#lib/server/guard.ts';
 import { listCharacters } from '#lib/server/queries.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -205,7 +206,22 @@ export const actions: Actions = {
 			return true;
 		});
 		if (!removed) return formError('error.invalid');
+		// แจ้งห้องประมูล (ล้มเหลวไม่กระทบการมอบ)
+		const [itemRow] = await db.select({ name: auctionItem.name }).from(auction).innerJoin(auctionItem, eq(auction.itemId, auctionItem.id)).where(eq(auction.id, row.q.id));
+		void enqueueDiscord({ type: 'auction_award', orgId: ctx.guild.id, item: itemRow?.name ?? '', ign: row.char.ign });
 		await writeAudit({ organizationId: ctx.guild.id, actorUserId: ctx.user.id, action: 'auction.award', targetType: 'auction', targetId: row.q.id, detail: { characterId: row.char.id, ign: row.char.ign } });
+		return { ok: true };
+	},
+
+	/** ส่งรูปคิวประมูลทั้งหมดลงห้องประมูล (ถ้าไม่ได้ตั้งห้องประมูลใช้ห้องรูป) */
+	sendDiscord: async (event) => {
+		const ctx = await requireGuild(event, ['auction', 'close']);
+		const ch = await guildChannels(ctx.guild.id);
+		const channelId = ch.auction ?? ch.notify;
+		if (!channelId) return formError('error.noChannel');
+		const ok = await enqueueDiscord({ type: 'send_image', kind: 'auction', orgId: ctx.guild.id, targetId: ctx.guild.id, channelId });
+		if (!ok) return formError('error.discordUnavailable', 503);
+		await writeAudit({ organizationId: ctx.guild.id, actorUserId: ctx.user.id, action: 'auction.send_discord', targetType: 'auction' });
 		return { ok: true };
 	},
 

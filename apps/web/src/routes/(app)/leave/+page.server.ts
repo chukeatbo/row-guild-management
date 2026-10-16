@@ -4,6 +4,7 @@ import { LEAVE_EVENT_TYPES } from '@row/shared';
 import { and, asc, eq, gte, inArray, ne } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
+import { enqueueDiscord } from '#lib/server/discord.ts';
 import { formError, isUniqueViolation, requireGuild } from '#lib/server/guard.ts';
 import { listCharacters } from '#lib/server/queries.ts';
 import { ensureStandingEvents } from '#lib/server/schedule.ts';
@@ -147,6 +148,7 @@ export const actions: Actions = {
 			targetId: ev.id,
 			detail: { characterId, ign: char.ign, reason, forOther: char.userId !== ctx.user.id }
 		});
+		void enqueueDiscord({ type: 'leave', orgId: ctx.guild.id, eventId: ev.id, ign: char.ign, reason, cancelled: false, byOther: char.userId !== ctx.user.id });
 		return { ok: true };
 	},
 
@@ -176,6 +178,7 @@ export const actions: Actions = {
 			targetId: row.ev.id,
 			detail: { characterId: row.char.id, ign: row.char.ign }
 		});
+		void enqueueDiscord({ type: 'leave', orgId: ctx.guild.id, eventId: row.ev.id, ign: row.char.ign, reason: null, cancelled: true, byOther: row.char.userId !== ctx.user.id });
 		return { ok: true };
 	}
 };

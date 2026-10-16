@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Check, Gavel, LogIn, LogOut, Plus, Trash2, X } from '@lucide/svelte';
+	import { Check, Gavel, LogIn, LogOut, Plus, Send, Trash2, X } from '@lucide/svelte';
 	import ClassBadge from '#lib/components/ClassBadge.svelte';
 	import Combobox from '#lib/components/Combobox.svelte';
 	import { formatDateTime } from '#lib/datetime.ts';
@@ -14,6 +14,18 @@
 
 	let error = $state<string | null>(null);
 	let errorTimer: ReturnType<typeof setTimeout> | undefined;
+
+	let notice = $state<string | null>(null);
+	const sendSubmit = () => async (e: { result: any }) => {
+		if (e.result.type === 'failure') {
+			error = e.result.data?.error ?? 'error.generic';
+			clearTimeout(errorTimer);
+			errorTimer = setTimeout(() => (error = null), 4000);
+		} else {
+			notice = 'discord.queued';
+			setTimeout(() => (notice = null), 4000);
+		}
+	};
 
 	/** ล้มเหลว → แสดง error key ที่แปลแล้วชั่วคราว; สำเร็จ → โหลดข้อมูลใหม่ + ล้างฟอร์ม */
 	const submit = () => async (e: { result: any; update: (o?: { reset?: boolean }) => Promise<void> }) => {
@@ -31,7 +43,17 @@
 
 <svelte:head><title>{t('auction.title')} · {t('app.name')}</title></svelte:head>
 
-<h1 class="text-2xl font-semibold tracking-tight">{t('auction.title')}</h1>
+<div class="flex flex-wrap items-center justify-between gap-2">
+	<h1 class="text-2xl font-semibold tracking-tight">{t('auction.title')}</h1>
+	{#if data.canManage}
+		<form method="POST" action="?/sendDiscord" use:enhance={sendSubmit}>
+			<button class="btn-secondary"><Send size={15} />{t('discord.send')}</button>
+		</form>
+	{/if}
+</div>
+{#if notice}
+	<p class="animate-pop mt-4 rounded-lg bg-success/10 px-3 py-2 text-sm text-success" role="status">{t(notice as MessageKey)}</p>
+{/if}
 
 {#if error}
 	<p class="animate-pop mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger" role="alert">{t(error as MessageKey)}</p>
