@@ -1,0 +1,31 @@
+{
+  "name": "@row/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "seed": "tsx --env-file=../../.env src/seed.ts",
+    "grant-admin": "tsx --env-file=../../.env src/grant-admin.ts",
+    "seed-dev": "tsx --env-file=../../.env src/seed-dev.ts",
+    "unseed-dev": "tsx --env-file=../../.env src/seed-dev.ts --unseed",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@row/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@row/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./permissions": "./src/permissions.ts"
+  },
+  "scripts": {
+    "generate": "better-auth generate --config ./src/cli.ts --output ../db/src/schema/auth.ts --yes",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@row/db": "workspace:*",
+    "better-auth": "^1.7.9"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

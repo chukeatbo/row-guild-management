@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Design tokens — ชื่อตามแบบ shadcn (background/foreground/primary/...) เพื่อเพิ่ม shadcn-svelte ภายหลังได้
+ * แก้สีทั้งระบบที่นี่ที่เดียว
+ */
+:root {
+	--background: #f6f7fb;
+	--foreground: #181b2c;
+	--card: #ffffff;
+	--card-foreground: #181b2c;
+	--muted: #eceef6;
+	--muted-foreground: #646a85;
+	--border: #e1e4f0;
+	--input: #d5d9ea;
+	--primary: #4f5bd5;
+	--primary-hover: #4350c4;
+	--primary-foreground: #ffffff;
+	--accent: #e9ebfb;
+	--accent-foreground: #343fa8;
+	--success: #12a36a;
+	--warning: #d98a06;
+	--danger: #e04b4b;
+	--ring: #4f5bd5;
+	--shadow: 0 1px 2px rgb(24 27 44 / 0.05), 0 4px 16px rgb(24 27 44 / 0.05);
+	--shadow-lg: 0 12px 40px rgb(24 27 44 / 0.16);
+	color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+	--background: #0e1019;
+	--foreground: #e8eaf6;
+	--card: #161927;
+	--card-foreground: #e8eaf6;
+	--muted: #1d2133;
+	--muted-foreground: #9097b5;
+	--border: #272b40;
+	--input: #313650;
+	--primary: #7b86f5;
+	--primary-hover: #8f99ff;
+	--primary-foreground: #0e1019;
+	--accent: #232845;
+	--accent-foreground: #b8bfff;
+	--success: #34d399;
+	--warning: #fbbf24;
+	--danger: #f87171;
+	--ring: #7b86f5;
+	--shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+	--shadow-lg: 0 12px 40px rgb(0 0 0 / 0.5);
+	color-scheme: dark;
+}
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-primary: var(--primary);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
+	--color-ring: var(--ring);
+	--shadow-card: var(--shadow);
+	--shadow-pop: var(--shadow-lg);
+	--radius-card: 14px;
+	--font-sans:
+		'Inter', 'Noto Sans Thai', 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+		sans-serif;
+}
+
+@layer base {
+	html {
+		-webkit-text-size-adjust: 100%;
+	}
+	body {
+		background: var(--background);
+		color: var(--foreground);
+		font-family: var(--font-sans);
+		font-size: 15px;
+		line-height: 1.55;
+		-webkit-font-smoothing: antialiased;
+	}
+	/* สลับ theme แบบ smooth */
+	body,
+	.themed {
+		transition:
+			background-color 0.25s ease,
+			color 0.25s ease,
+			border-color 0.25s ease;
+	}
+	:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		* {
+			transition-duration: 0.01ms !important;
+			animation-duration: 0.01ms !important;
+		}
+	}
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.animate-pop {
+	animation: pop-in 0.18s ease-out;
+}
+
+@layer components {
+	.input {
+		@apply w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/25 focus:outline-none disabled:opacity-60;
+	}
+	.label {
+		@apply mb-1.5 block text-xs font-medium text-muted-foreground;
+	}
+	.btn,
+	.btn-primary,
+	.btn-secondary,
+	.btn-ghost,
+	.btn-danger {
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium whitespace-nowrap transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+	}
+	.btn-primary {
+		@apply bg-primary text-primary-foreground shadow-card hover:bg-primary-hover;
+	}
+	.btn-secondary {
+		@apply border border-border bg-card text-foreground hover:bg-muted;
+	}
+	.btn-ghost {
+		@apply text-muted-foreground hover:bg-muted hover:text-foreground;
+	}
+	.btn-danger {
+		@apply bg-danger/10 text-danger hover:bg-danger/20;
+	}
+	.btn-sm {
+		@apply px-2.5 py-1.5 text-xs;
+	}
+	.card {
+		@apply rounded-card border border-border bg-card p-5 text-card-foreground shadow-card;
+	}
+	.table-wrap {
+		@apply overflow-x-auto rounded-card border border-border bg-card shadow-card;
+	}
+	.table {
+		@apply w-full text-left text-sm;
+	}
+	.table th {
+		@apply border-b border-border bg-muted/50 px-4 py-2.5 text-xs font-medium whitespace-nowrap text-muted-foreground;
+	}
+	.table td {
+		@apply border-b border-border/60 px-4 py-2.5 align-middle;
+	}
+	.table tr:last-child td {
+		@apply border-b-0;
+	}
+}

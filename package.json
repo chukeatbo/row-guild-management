@@ -1,0 +1,21 @@
+{
+  "name": "row-guild-management",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:bot": "pnpm --filter bot dev",
+    "db:generate": "pnpm --filter @row/db generate",
+    "db:migrate": "pnpm --filter @row/db migrate",
+    "db:seed": "pnpm --filter @row/db seed",
+    "db:grant-admin": "pnpm --filter @row/db grant-admin",
+    "db:seed-dev": "pnpm --filter @row/db seed-dev",
+    "db:unseed-dev": "pnpm --filter @row/db unseed-dev",
+    "auth:generate": "pnpm --filter @row/auth generate",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}
