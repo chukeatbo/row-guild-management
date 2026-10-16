@@ -34,7 +34,7 @@
 
 	async function signOut() {
 		await authClient.signOut();
-		// ออกแล้วไปหน้า landing ตามภาษาที่ใช้อยู่ (ภาษาที่ landing ไม่มี เช่น zh → หน้าไทย)
+		// ออกแล้วไปหน้า landing ตามภาษาที่ใช้อยู่ (ภาษาที่ landing ไม่มี → หน้าไทย)
 		const l = locale();
 		location.href = (langs as string[]).includes(l) ? langPath[l as Lang] : '/';
 	}

@@ -1,7 +1,7 @@
 /**
  * ข้อกำหนดการใช้บริการ + นโยบายความเป็นส่วนตัว (ไทย/อังกฤษ)
  * ข้อมูลผู้ให้บริการ (ชื่อ ที่อยู่ อีเมล เบอร์) ดึงจาก site.legal ใน site.ts
- * ภาษาอื่น (id/fil) ใช้ฉบับอังกฤษ
+ * ภาษาอื่น (id/fil/zh) ใช้ฉบับอังกฤษ
  */
 import type { Lang } from '#lib/landing/content.ts';
 import { site } from '#lib/landing/site.ts';

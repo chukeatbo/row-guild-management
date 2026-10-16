@@ -184,6 +184,7 @@ pnpm typecheck
   - ภาษาของหน้า landing มาจาก URL (`landingLangFromPath` ใน hooks) ไม่ใช่ cookie `locale`; สลับภาษาบน landing ใช้ full reload
   - CSS ของ landing อยู่ท้าย `app.css` คลาสขึ้นต้น `lp-` (ห้ามใช้ `.btn-*`/`.card` ของระบบใน landing และกลับกัน); ฟอนต์ฐานขยาย 17–20px เฉพาะหน้าที่มี `.landing` (`html:has(.landing)`)
   - **ธีมแยกฝั่ง** (ผู้ใช้สั่ง, `lib/theme.ts`): landing/กฎหมาย = cookie `site-theme` ค่าเริ่มต้น **light**; ระบบ (login, แดชบอร์ด, render) = cookie `app-theme` ค่าเริ่มต้น **dark** — สลับฝั่งหนึ่งไม่กระทบอีกฝั่ง; `themeScope(path)` ตัดสินจาก `landingLangFromPath`; root layout ใส่ธีมใหม่เมื่อเดินข้ามฝั่งแบบ client-side; cookie `theme` เดิมเลิกใช้แล้ว
+  - **sync ภาษา landing → ระบบ** (root `+layout.svelte`): เปิดหน้า landing/กฎหมายภาษาไหน ตั้ง cookie `locale` เป็นภาษานั้น (ยกเว้น `/` เมื่อ cookie เป็นภาษาที่ landing ไม่มี); landing มี th `/`, en, id, fil, zh — ภาษาใหม่ของระบบต้องเพิ่มใน `lib/landing/content.ts` + route `(marketing)/<lang>` ด้วย; ออกจากระบบ → ไปหน้า landing ตาม `locale`; ปุ่ม CTA/แพ็กเกจบน landing → `/login` หรือ `/dashboard` ถ้า login แล้ว
 
 ## แนวทางทำงานร่วมกัน
 

@@ -2,7 +2,7 @@
  * ข้อความทั้งหน้า แยกตามภาษา — เพิ่ม/แก้ข้อความที่นี่
  * ทุกภาษาต้องมี key ครบ (type `Content` บังคับ) ไม่งั้น typecheck ไม่ผ่าน
  */
-export type Lang = 'th' | 'en' | 'id' | 'fil';
+export type Lang = 'th' | 'en' | 'id' | 'fil' | 'zh';
 export type FeatureIcon = 'swords' | 'calendar' | 'repeat' | 'gavel' | 'bot' | 'users' | 'shield' | 'globe';
 export type PlanId = 'trial' | 'guild' | 'pro';
 
@@ -644,11 +644,153 @@ const fil: Content = {
 	langName: 'Filipino'
 };
 
-export const content: Record<Lang, Content> = { th, en, id, fil };
+const zh: Content = {
+	meta: {
+		title: 'ROW Guild Management — Ragnarok: The New World 公会战阵容与公会管理工具',
+		description:
+			'ROW 一站式公会管理：拖放式编排 Guild League / Siege War / Polarity 队伍、公会战请假、公会拍卖排队，以及自动发送提醒和队伍图片的 Discord 机器人。'
+	},
+	nav: { features: '功能', pricing: '价格', faq: '常见问题', contact: '联系我们', login: '登录', dashboard: '进入后台' },
+	hero: {
+		badge: '专为 Ragnarok: The New World 公会打造',
+		title: '整个公会的战前排阵',
+		highlight: '一页搞定',
+		lead: '不再用表格排阵容，也不用在群里追问谁请假。拖放编排 GL / Siege / Polarity 队伍，请假后自动移出队伍，Discord 机器人在开战前提醒所有人并发送阵容图片。',
+		cta: '免费试用',
+		ctaSecondary: '查看功能',
+		points: ['使用 Discord 登录', '支持手机使用', '每个公会最多 150 人']
+	},
+	mock: { title: 'Guild League · 主战场', group: '中路', party: '小队', leader: '队长', unassigned: '未分配', onLeave: '请假' },
+	features: {
+		eyebrow: '功能',
+		title: '会长和干部每周需要的一切',
+		lead: '根据 ROW 公会真实的公会战流程设计 —— 不是需要自己改造的通用工具。',
+		items: [
+			{
+				icon: 'swords',
+				title: '拖放式队伍编排',
+				body: '编排 Guild League（主战场 3 条路 + 副战场）、Siege War（不限分组）和 50 人 Polarity 阵容。指定队长、锁定队伍，并查看每队的坦克/输出/治疗/辅助统计。'
+			},
+			{
+				icon: 'calendar',
+				title: '公会战请假',
+				body: '成员在截止时间前自行请假，并自动移出所在队伍。干部可以替任何人请假或取消请假，并查看所有请假记录和原因。'
+			},
+			{
+				icon: 'repeat',
+				title: '每周公会战日程',
+				body: '只需设置一次公会战日期。活动会自动进入下一轮并清空旧的请假记录 —— 阵容保留，只需调整有变动的部分。时间按每位用户设备的时区显示。'
+			},
+			{
+				icon: 'gavel',
+				title: '公会拍卖排队',
+				body: '每件物品一个队列，先到先得。成员可自行排队；干部发放物品（必要时可跳过），每个队列都有发放记录可供回查。'
+			},
+			{
+				icon: 'bot',
+				title: 'Discord 机器人',
+				body: '开战前提醒所有人，一键将阵容和拍卖队列图片发送到指定频道，并通知请假和物品发放 —— 成员无需打开网站也能知道。'
+			},
+			{
+				icon: 'users',
+				title: '成员与职业图表',
+				body: '公会所有角色一览，一人可有多个角色。用图表查看职业和定位分布，可自定义定位（如输出型牧师），也可为尚未登录的玩家添加角色。'
+			},
+			{
+				icon: 'shield',
+				title: '按职位分配权限',
+				body: '会长 / 干部 / 队长 / 成员。队长只能编辑自己的队伍，所有重要变更都有记录。'
+			},
+			{
+				icon: 'globe',
+				title: '多语言 · 深色模式',
+				body: '支持泰语、英语、菲律宾语、印尼语和简体中文，提供深色模式，手机上也能轻松使用。'
+			}
+		]
+	},
+	steps: {
+		eyebrow: '开始使用',
+		title: '一天内即可开打',
+		items: [
+			{ title: '联系我们', body: '通过 Discord / LINE / Facebook 联系我们，我们为你开通公会并将会长设为所有者。' },
+			{ title: '邀请机器人', body: '为每项活动选择提醒频道和图片频道。' },
+			{ title: '成员登录', body: '成员使用 Discord 登录并添加角色 —— 立即开始拖放排阵。' }
+		]
+	},
+	pricing: {
+		eyebrow: '价格',
+		title: '一个价格，全公会通用',
+		lead: '按公会收费，而不是按人数。所有成员均可使用，无需额外费用。',
+		perMonth: '/月',
+		free: '免费',
+		askPrice: '咨询',
+		popular: '最受欢迎',
+		note: '支持银行转账 / PromptPay 付款。请联系我们开通公会。',
+		plans: [
+			{
+				id: 'trial',
+				name: '试用',
+				desc: '14 天体验全部功能',
+				features: ['包含 Guild 套餐全部功能', '1 个公会', '无需绑卡'],
+				cta: '开始试用'
+			},
+			{
+				id: 'guild',
+				name: 'Guild',
+				desc: '适合每周参战的公会',
+				features: ['GL / Siege / Polarity 队伍编排', '请假 + 自动日程', '公会拍卖排队', 'Discord 提醒 + 图片', '最多 150 名成员'],
+				cta: '选择此套餐'
+			},
+			{
+				id: 'pro',
+				name: 'Alliance',
+				desc: '适合同一联盟的多个公会',
+				features: ['包含 Guild 全部功能', '最多 3 个公会', 'Discord 优先支持', '可提功能需求'],
+				cta: '选择此套餐'
+			}
+		]
+	},
+	faq: {
+		eyebrow: '常见问题',
+		title: '有疑问？这里有答案',
+		items: [
+			{ q: '需要安装什么吗？', a: '不需要。在电脑和手机浏览器中即可使用，成员使用现有的 Discord 账号登录。' },
+			{
+				q: '每个成员都必须登录吗？',
+				a: '不必。干部可以为尚未登录的玩家添加角色并编入队伍。登录的成员可以自行请假和参加拍卖排队。'
+			},
+			{ q: '一个玩家可以有多个角色吗？', a: '可以。每个角色都有自己的游戏名和职业，可以分别编入队伍。' },
+			{ q: 'Discord 机器人需要哪些权限？', a: '只需在你选择的频道中发送消息和附加图片。机器人不会读取服务器中的消息，也不需要管理员权限。' },
+			{
+				q: '支持哪些服务器？',
+				a: '支持 Ragnarok: The New World 的所有服务器。时间按每位用户的时区显示，海外成员也能正常使用。'
+			},
+			{ q: '可以取消吗？', a: '随时可以，没有合约约束。公会可使用至已付费周期结束。' }
+		]
+	},
+	contact: {
+		title: '准备好告别用表格排阵了吗？',
+		lead: '联系我们 —— 我们会协助你设置公会和机器人，直到一切正常运行。',
+		discord: 'Discord',
+		line: 'LINE',
+		facebook: 'Facebook'
+	},
+	footer: {
+		disclaimer: 'Ragnarok: The New World 是其版权方的商标。本网站是玩家制作的工具，与游戏开发商或运营商无关。',
+		rights: '保留所有权利',
+		terms: '服务条款',
+		privacy: '隐私政策',
+		refund: '退款政策'
+	},
+	theme: { light: '浅色模式', dark: '深色模式' },
+	langName: '简体中文'
+};
+
+export const content: Record<Lang, Content> = { th, en, id, fil, zh };
 export const langs = Object.keys(content) as Lang[];
-export const langPath: Record<Lang, string> = { th: '/', en: '/en', id: '/id', fil: '/fil' };
+export const langPath: Record<Lang, string> = { th: '/', en: '/en', id: '/id', fil: '/fil', zh: '/zh' };
 /** locale สำหรับจัดรูปแบบตัวเลข */
-export const langLocale: Record<Lang, string> = { th: 'th-TH', en: 'en-US', id: 'id-ID', fil: 'fil-PH' };
+export const langLocale: Record<Lang, string> = { th: 'th-TH', en: 'en-US', id: 'id-ID', fil: 'fil-PH', zh: 'zh-CN' };
 
 const LANDING_ROOTS = ['/', '/terms', '/privacy'];
 /** ภาษาของหน้า landing/กฎหมายจาก path (/en, /id/..., /terms) — ไม่ใช่หน้า landing = null */
