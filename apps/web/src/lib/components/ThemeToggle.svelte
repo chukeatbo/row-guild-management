@@ -2,30 +2,20 @@
 	import { Monitor, Moon, Sun } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { useT } from '#lib/i18n/index.ts';
+	import { readThemePref, saveThemePref, type ThemePref } from '#lib/theme.ts';
 
-	type Pref = 'light' | 'dark' | 'system';
+	/** ปุ่มธีมของหน้าระบบ (cookie `app-theme`, ค่าเริ่มต้น dark) — หน้า landing มีปุ่มของตัวเอง */
 	let { class: cls = '' }: { class?: string } = $props();
 	const t = useT();
-	let pref: Pref = $state('system');
-
-	const apply = (p: Pref) => {
-		const dark = p === 'dark' || (p === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-	};
+	let pref: ThemePref = $state('dark');
 
 	onMount(() => {
-		const m = document.cookie.match(/(?:^|; )theme=(light|dark|system)/);
-		pref = (m?.[1] as Pref) ?? 'system';
-		const mq = matchMedia('(prefers-color-scheme: dark)');
-		const onChange = () => pref === 'system' && apply('system');
-		mq.addEventListener('change', onChange);
-		return () => mq.removeEventListener('change', onChange);
+		pref = readThemePref('app');
 	});
 
-	const set = (p: Pref) => {
+	const set = (p: ThemePref) => {
 		pref = p;
-		document.cookie = `theme=${p}; path=/; max-age=31536000; samesite=lax`;
-		apply(p);
+		saveThemePref('app', p);
 	};
 
 	const options = [

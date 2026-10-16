@@ -5,14 +5,16 @@
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { authClient } from '#lib/auth-client.ts';
-	import { useT, type MessageKey } from '#lib/i18n/index.ts';
+	import { useLocale, useT, type MessageKey } from '#lib/i18n/index.ts';
+	import { langPath, langs, type Lang } from '#lib/landing/content.ts';
 
 	let { data, children } = $props();
 	const t = useT();
+	const locale = useLocale();
 
 	const nav = $derived(
 		[
-			{ href: '/', key: 'nav.dashboard', icon: LayoutDashboard, show: true },
+			{ href: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard, show: true },
 			{ href: '/members', key: 'nav.members', icon: Users, show: !!data.guild },
 			{ href: '/events', key: 'nav.events', icon: CalendarDays, show: !!data.guild },
 			{ href: '/leave', key: 'nav.leave', icon: CalendarX, show: !!data.guild },
@@ -23,8 +25,7 @@
 		].filter((n) => n.show) as { href: string; key: MessageKey; icon: typeof Users }[]
 	);
 
-	const isActive = (href: string) =>
-		href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+	const isActive = (href: string) => page.url.pathname.startsWith(href);
 
 	async function switchGuild(e: Event) {
 		document.cookie = `guild=${(e.currentTarget as HTMLSelectElement).value}; path=/; max-age=31536000; samesite=lax`;
@@ -33,7 +34,9 @@
 
 	async function signOut() {
 		await authClient.signOut();
-		location.href = '/login';
+		// ออกแล้วไปหน้า landing ตามภาษาที่ใช้อยู่ (ภาษาที่ landing ไม่มี เช่น zh → หน้าไทย)
+		const l = locale();
+		location.href = (langs as string[]).includes(l) ? langPath[l as Lang] : '/';
 	}
 </script>
 
@@ -56,7 +59,7 @@
 <div class="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">
 	<!-- Sidebar (desktop) -->
 	<aside class="themed sticky top-0 hidden h-dvh flex-col gap-6 border-r border-border bg-card p-4 lg:flex">
-		<a href="/" class="flex items-center gap-2.5 px-1">
+		<a href="/dashboard" class="flex items-center gap-2.5 px-1">
 			<span class="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
 				<Shield size={18} />
 			</span>
@@ -95,7 +98,7 @@
 		<header
 			class="themed sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-card/85 px-4 py-2.5 backdrop-blur lg:hidden"
 		>
-			<a href="/" class="flex min-w-0 items-center gap-2">
+			<a href="/dashboard" class="flex min-w-0 items-center gap-2">
 				<span class="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
 					<Shield size={16} />
 				</span>

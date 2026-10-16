@@ -28,7 +28,7 @@ export async function renderPng(kind: RenderKind, id: string, field?: 'main' | '
   try {
     // รูปใน Discord: ธีมมืด ภาษาไทย เวลากิลด์ (Bangkok)
     await ctx.addCookies(
-      ['theme=dark', 'locale=th', 'tz=Asia%2FBangkok'].map((c) => {
+      ['app-theme=dark', 'locale=th', 'tz=Asia%2FBangkok'].map((c) => {
         const [name, value] = c.split('=') as [string, string];
         return { name, value, url: env.webUrl };
       })

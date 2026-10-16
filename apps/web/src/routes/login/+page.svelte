@@ -10,7 +10,7 @@
 
 	async function login() {
 		loading = true;
-		await authClient.signIn.social({ provider: 'discord', callbackURL: '/' });
+		await authClient.signIn.social({ provider: 'discord', callbackURL: '/dashboard' });
 	}
 </script>
 

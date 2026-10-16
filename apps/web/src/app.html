@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="%lang%" data-theme="%theme%">
+<html lang="%lang%" data-theme="%theme%" data-theme-scope="%themeScope%">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
@@ -11,14 +11,15 @@
 			rel="stylesheet"
 		/>
 		<script>
-			// กัน flash: ถ้า theme = system ให้ตัดสินจาก prefers-color-scheme ก่อน paint
+			// กัน flash: ตัดสิน theme ก่อน paint — แยก cookie ตามฝั่ง (ดู lib/theme.ts)
+			// site (landing): site-theme ไม่มี = light · app (ระบบ): app-theme ไม่มี = dark · system = ตาม prefers-color-scheme
 			(function () {
-				var m = document.cookie.match(/(?:^|; )theme=(light|dark|system)/);
-				var pref = m ? m[1] : 'system';
-				var dark =
-					pref === 'dark' ||
-					(pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-				document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+				var root = document.documentElement;
+				var site = root.dataset.themeScope === 'site';
+				var m = document.cookie.match(site ? /(?:^|; )site-theme=(light|dark|system)/ : /(?:^|; )app-theme=(light|dark|system)/);
+				var pref = m ? m[1] : site ? 'light' : 'dark';
+				var dark = pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+				root.dataset.theme = dark ? 'dark' : 'light';
 			})();
 		</script>
 		%sveltekit.head%

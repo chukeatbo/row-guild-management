@@ -129,7 +129,7 @@ pnpm typecheck
 - [x] ตั้งค่า Discord login ใช้งานได้จริงแล้ว (ผู้ใช้ login ผ่านและเป็น Super Admin แล้ว)
 - [x] **Phase 1**: Dashboard + กราฟอาชีพ, รายละเอียดกิลด์, สมาชิก/ตัวละคร, Super Admin (อาชีพ/บอส/ไอเทม/กิลด์)
 - **Design system**: Tailwind v4 + token ใน `apps/web/src/app.css` (light/dark/system, ชื่อ token แบบ shadcn), คลาส `.btn-* .input .card .table` — ยังไม่ได้ติดตั้ง shadcn-svelte
-- **i18n**: th/en/fil/id/zh(简体) ที่ `apps/web/src/lib/i18n/` (key ใหม่ต้องใส่ครบทุกภาษา ไม่งั้น typecheck ไม่ผ่าน), เก็บภาษา/ธีมใน cookie `locale`/`theme`
+- **i18n**: th/en/fil/id/zh(简体) ที่ `apps/web/src/lib/i18n/` (key ใหม่ต้องใส่ครบทุกภาษา ไม่งั้น typecheck ไม่ผ่าน), เก็บภาษาใน cookie `locale`; ธีมแยก 2 ฝั่ง (ดูข้อ landing)
 - **กิลด์ปัจจุบัน** เลือกจาก cookie `guild` แล้วตรวจกับ membership เสมอ (`lib/server/guard.ts`); Super Admin ถือเป็น owner ทุกกิลด์; กิลด์ที่ถูกระงับสมาชิกทั่วไปเข้าไม่ได้
 - **ตั้ง Super Admin**: login ครั้งหนึ่งก่อน แล้วรัน `pnpm db:grant-admin <discordId>`; เพิ่มสมาชิกเข้ากิลด์ด้วย Discord ID (ไม่ใช้ระบบ invitation/email)
 - ตาราง `member` ของ Better Auth ไม่มี unique (org,user) — เช็คซ้ำใน server code
@@ -176,6 +176,14 @@ pnpm typecheck
 - [x] **Phase 4 คิวประมูล** (ทดสอบ 31 เคส + UI จริงผ่านแล้ว): `/auction` — **คิวถาวรต่อไอเทม** (ผู้ใช้พิมพ์ชื่อเอง เช่น "Relic STR (โล่)" — ในชีทแถวสีแดงคือชนิด Relic STR 8 แบบ), เรียงมาก่อนได้ก่อน (`auction_entry.createdAt`), 1 คนลงได้ 1 ตัวละครต่อคิว แต่ลงหลายคิวพร้อมกันได้
   - ผู้มี `auction:close` (officer ขึ้นไป) เพิ่มคิว (เลือกจาก master หรือพิมพ์ชื่อใหม่ → สร้างใน `auction_item`), **มอบให้ใครในคิวก็ได้ (ข้ามคนแรกได้** เช่นไม่มีเพชรพอ/ไม่อยู่) → คนนั้นหลุดจากคิว + บันทึกใน `auction_award` **คิวไม่ปิด**; เอาคนออก, ยกเลิกคิว; ทุกคน (`auction:enter`) ลงคิว/ออกเองได้; ลงใหม่ = ต่อท้ายคิว
   - ยังไม่มี: แจ้งเตือน/ส่งรูปคิวลง Discord (Phase 6); `auction.status closed/winner*` ไม่ได้ใช้แล้ว
+
+- [x] **Landing page + หน้ากฎหมาย ** — route group `(marketing)` เปิดสาธารณะ ไม่ต้อง login
+  - `/` (ไทย), `/en`, `/id`, `/fil` = หน้าขาย; `/terms`, `/privacy`, `/en/terms`, `/en/privacy` = ข้อกำหนดการใช้บริการ / นโยบายความเป็นส่วนตัว (id/fil ลิงก์ไปฉบับอังกฤษ)
+  - **แดชบอร์ดย้ายจาก `/` ไป `/dashboard`** (login แล้ว redirect มาที่นี่); ทุก route ใน `(app)` ยังผ่าน `requireUser` → ไม่ login = redirect `/login`
+  - โค้ดอยู่ `apps/web/src/lib/landing/` (`content.ts` ข้อความ 4 ภาษา, `legal.ts` ข้อความกฎหมาย th/en, `site.ts` ราคา/ช่องทางติดต่อ/ข้อมูลผู้ให้บริการ — **ยังเป็นค่าตัวอย่าง ต้องแก้ก่อนยื่น Omise**)
+  - ภาษาของหน้า landing มาจาก URL (`landingLangFromPath` ใน hooks) ไม่ใช่ cookie `locale`; สลับภาษาบน landing ใช้ full reload
+  - CSS ของ landing อยู่ท้าย `app.css` คลาสขึ้นต้น `lp-` (ห้ามใช้ `.btn-*`/`.card` ของระบบใน landing และกลับกัน); ฟอนต์ฐานขยาย 17–20px เฉพาะหน้าที่มี `.landing` (`html:has(.landing)`)
+  - **ธีมแยกฝั่ง** (ผู้ใช้สั่ง, `lib/theme.ts`): landing/กฎหมาย = cookie `site-theme` ค่าเริ่มต้น **light**; ระบบ (login, แดชบอร์ด, render) = cookie `app-theme` ค่าเริ่มต้น **dark** — สลับฝั่งหนึ่งไม่กระทบอีกฝั่ง; `themeScope(path)` ตัดสินจาก `landingLangFromPath`; root layout ใส่ธีมใหม่เมื่อเดินข้ามฝั่งแบบ client-side; cookie `theme` เดิมเลิกใช้แล้ว
 
 ## แนวทางทำงานร่วมกัน
 

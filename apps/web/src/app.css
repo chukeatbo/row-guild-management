@@ -172,3 +172,78 @@
 		@apply border-b-0;
 	}
 }
+
+/*
+ * Landing page (/, /en, /id, /fil, /terms, /privacy)
+ * คลาสขึ้นต้น lp- ทั้งหมด จะได้ไม่ชนกับ .btn-* / .card ของระบบหลัก
+ * ขนาดตัวอักษรฐานขยายเฉพาะหน้าที่มี .landing (rem ทั้งหน้าขยายตาม): มือถือ 17px · แท็บเล็ต 18px · จอใหญ่ 20px
+ */
+:root {
+	--glow: rgb(79 91 213 / 0.18);
+}
+:root[data-theme='dark'] {
+	--glow: rgb(123 134 245 / 0.22);
+}
+
+@utility lp-container-page {
+	@apply w-full px-4 sm:px-6 lg:px-10 2xl:px-16;
+}
+
+@layer base {
+	html:has(.landing) {
+		font-size: 106.25%;
+		scroll-behavior: smooth;
+		scroll-padding-top: 5rem;
+	}
+	@media (width >= 48rem) {
+		html:has(.landing) {
+			font-size: 112.5%;
+		}
+	}
+	@media (width >= 80rem) {
+		html:has(.landing) {
+			font-size: 125%;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		html:has(.landing) {
+			scroll-behavior: auto;
+		}
+	}
+	.landing {
+		font-size: 1rem;
+		line-height: 1.6;
+	}
+}
+
+@layer components {
+	.lp-btn-primary,
+	.lp-btn-secondary,
+	.lp-btn-ghost {
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold whitespace-nowrap transition active:scale-[0.98];
+	}
+	.lp-btn-primary {
+		@apply bg-primary text-primary-foreground shadow-card hover:bg-primary-hover;
+	}
+	.lp-btn-secondary {
+		@apply border border-border bg-card text-foreground hover:bg-muted;
+	}
+	.lp-btn-ghost {
+		@apply px-3 text-muted-foreground hover:bg-muted hover:text-foreground;
+	}
+	.lp-card {
+		@apply rounded-card border border-border bg-card shadow-card;
+	}
+	.lp-section {
+		@apply lp-container-page py-20 sm:py-24 2xl:py-28;
+	}
+	.lp-eyebrow {
+		@apply text-sm font-semibold tracking-wide text-primary uppercase;
+	}
+	.lp-section-title {
+		@apply mt-2 text-2xl font-bold tracking-tight text-balance sm:text-3xl 2xl:text-4xl;
+	}
+	.lp-section-lead {
+		@apply mt-4 max-w-2xl text-lg text-pretty text-muted-foreground 2xl:max-w-3xl 2xl:text-xl;
+	}
+}

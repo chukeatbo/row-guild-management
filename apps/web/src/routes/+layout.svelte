@@ -1,8 +1,10 @@
 <script lang="ts">
 	import '../app.css';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { deviceTimeZone, isValidTimeZone } from '#lib/datetime.ts';
 	import { htmlLang, provideLocale } from '#lib/i18n/index.ts';
+	import { applyTheme, readThemePref, themeScope } from '#lib/theme.ts';
 	import { provideTimezone } from '#lib/timezone.ts';
 
 	let { data, children } = $props();
@@ -23,6 +25,23 @@
 	// SSR ตั้ง lang ให้แล้ว; effect นี้ทำให้ตรงเมื่อสลับภาษาฝั่ง client
 	$effect(() => {
 		document.documentElement.lang = htmlLang(data.locale);
+	});
+
+	// ธีมแยกฝั่ง landing / ระบบ: SSR + app.html ตั้งให้หน้าแรกแล้ว; effect นี้ตามเมื่อเดินข้ามฝั่งแบบ client-side (เช่น landing → /dashboard)
+	const scope = $derived(themeScope(page.url.pathname));
+	$effect(() => {
+		document.documentElement.dataset.themeScope = scope;
+		applyTheme(readThemePref(scope));
+	});
+	// ตั้งเป็น system แล้วเครื่องเปลี่ยนโหมด → เปลี่ยนตาม
+	onMount(() => {
+		const mq = matchMedia('(prefers-color-scheme: dark)');
+		const onChange = () => {
+			const s = themeScope(location.pathname);
+			if (readThemePref(s) === 'system') applyTheme('system');
+		};
+		mq.addEventListener('change', onChange);
+		return () => mq.removeEventListener('change', onChange);
 	});
 </script>
 
