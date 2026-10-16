@@ -63,4 +63,6 @@ pnpm typecheck
 5. ติดตั้งเบราว์เซอร์สำหรับแคปรูป: `npx playwright-core install chromium` หรือตั้ง `CHROMIUM_PATH` เป็น Chrome/Edge ที่มีอยู่
 6. `docker compose up -d` (Redis) แล้ว `pnpm dev:web` + `pnpm dev:bot` (เปิดสองเทอร์มินัล)
 
+**ซิงก์ชื่อจาก Discord (ไม่บังคับ):** Developer Portal → Bot → Privileged Gateway Intents → เปิด **Server Members Intent** แล้วตั้ง Discord server ID ที่หน้า Guild; ถ้าไม่เปิด บอทจะ log เตือนตอนเริ่มแล้วทำงานส่วนอื่นต่อ (ปิดการเชื่อมด้วย `DISCORD_GATEWAY=off`)
+
 bot ทำ: worker รับงานจากเว็บ (ส่งรูป, แจ้งลา, แจ้งผู้ได้ไอเทม) + scheduler ทุกนาที (เลื่อนรอบ event ผ่าน `POST /api/internal/rollover`, เตือนก่อนเริ่ม 60 นาที พร้อมรูปปาร์ตี้)

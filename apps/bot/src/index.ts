@@ -4,6 +4,7 @@ import { Worker } from 'bullmq';
 import { redisConnection } from './env.ts';
 import { handle } from './jobs.ts';
 import { closeBrowser } from './render.ts';
+import { startGateway } from './gateway.ts';
 import { startScheduler } from './scheduler.ts';
 
 const worker = new Worker<DiscordJob>(DISCORD_QUEUE, (job) => handle(job.data), {
@@ -15,10 +16,12 @@ worker.on('failed', (job, err) => console.error(`[worker] ${job?.name} ${job?.id
 worker.on('error', (err) => console.error('[worker] error:', err.message));
 
 const stopScheduler = startScheduler();
+const stopGateway = startGateway(); // Promise — login ล้มเหลวไม่กระทบ worker/scheduler
 console.log('[bot] worker + scheduler started');
 
 async function shutdown() {
   await stopScheduler();
+  await (await stopGateway)();
   await worker.close();
   await closeBrowser();
   process.exit(0);

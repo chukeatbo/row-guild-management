@@ -16,6 +16,8 @@ export const env = {
     if (v === 'change-me') throw new Error('RENDER_SECRET must be changed from the default');
     return v;
   },
+  /** ปิดการเชื่อม Gateway (ซิงก์ชื่อ) — ใช้ตอนทดสอบหรือยังไม่ได้เปิด Server Members Intent */
+  gatewayOff: process.env.DISCORD_GATEWAY === 'off',
   /** ใช้ทดสอบกับ Discord ปลอม; ปกติไม่ตั้ง */
   discordApi: process.env.DISCORD_API_BASE,
   /** path ของ Chromium/Edge/Chrome; ไม่ตั้ง = ใช้ที่ `npx playwright install chromium` ลงไว้ */

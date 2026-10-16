@@ -9,6 +9,7 @@ export const load: LayoutServerLoad = async (event) => {
 		guilds: ctx.guilds.map(({ id, name }) => ({ id, name })),
 		guild: ctx.guild ? { id: ctx.guild.id, name: ctx.guild.name } : null,
 		role: ctx.role,
+		canReadAudit: ctx.isSuper || can(ctx.role, 'auditLog', 'read'),
 		canEditGuild: ctx.isSuper || can(ctx.role, 'guild', 'update')
 	};
 };

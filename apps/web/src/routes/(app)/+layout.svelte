@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { CalendarDays, CalendarX, Gavel, LayoutDashboard, LogOut, Shield, ShieldCheck, Swords, Users } from '@lucide/svelte';
+	import { CalendarDays, CalendarX, Gavel, History, LayoutDashboard, LogOut, Shield, ShieldCheck, Swords, Users } from '@lucide/svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { authClient } from '#lib/auth-client.ts';
@@ -18,6 +18,7 @@
 			{ href: '/leave', key: 'nav.leave', icon: CalendarX, show: !!data.guild },
 			{ href: '/auction', key: 'nav.auction', icon: Gavel, show: !!data.guild },
 			{ href: '/guild', key: 'nav.guild', icon: Swords, show: !!data.guild },
+			{ href: '/audit', key: 'nav.audit', icon: History, show: !!data.guild && data.canReadAudit },
 			{ href: '/admin', key: 'nav.admin', icon: ShieldCheck, show: data.isSuper }
 		].filter((n) => n.show) as { href: string; key: MessageKey; icon: typeof Users }[]
 	);
@@ -122,12 +123,12 @@
 				<a
 					href={n.href}
 					aria-current={isActive(n.href) ? 'page' : undefined}
-					class="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition {isActive(n.href)
+					class="flex min-w-0 flex-col items-center gap-0.5 py-2 font-medium transition {nav.length > 6 ? 'text-[10px]' : 'text-[11px]'} {isActive(n.href)
 						? 'text-primary'
 						: 'text-muted-foreground'}"
 				>
 					<n.icon size={20} />
-					{t(n.key)}
+					<span class="max-w-full truncate px-0.5">{t(n.key)}</span>
 				</a>
 			{/each}
 		</nav>
