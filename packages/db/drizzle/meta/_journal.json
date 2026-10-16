@@ -64,6 +64,13 @@
       "when": 1792144516458,
       "tag": "0008_dizzy_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792159026348,
+      "tag": "0009_handy_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

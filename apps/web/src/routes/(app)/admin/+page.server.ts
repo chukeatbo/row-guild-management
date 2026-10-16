@@ -1,4 +1,4 @@
-import { auctionItem, boss, gameClass, guildProfile, member, organization } from '@row/db';
+import { boss, gameClass, guildProfile, member, organization } from '@row/db';
 import { asc, count, eq } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
@@ -9,10 +9,9 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	await requireSuperAdmin(event);
-	const [classes, bosses, items, guilds] = await Promise.all([
+	const [classes, bosses, guilds] = await Promise.all([
 		listClasses(),
 		db.select().from(boss).orderBy(asc(boss.name)),
-		db.select().from(auctionItem).orderBy(asc(auctionItem.name)),
 		db
 			.select({
 				id: organization.id,
@@ -27,7 +26,7 @@ export const load: PageServerLoad = async (event) => {
 			.groupBy(organization.id, guildProfile.suspended)
 			.orderBy(asc(organization.name))
 	]);
-	return { classes, bosses, items, guilds };
+	return { classes, bosses, guilds };
 };
 
 const idOf = (fd: FormData) => ((fd.get('id') as string) || undefined);
@@ -64,23 +63,6 @@ export const actions: Actions = {
 			throw e;
 		}
 		await writeAudit({ organizationId: null, actorUserId: ctx.user.id, action: id ? 'master.boss_update' : 'master.boss_create', targetType: 'boss', targetId: id, detail: parsed.data });
-		return { ok: true };
-	},
-
-	saveItem: async (event) => {
-		const ctx = await requireSuperAdmin(event);
-		const fd = await event.request.formData();
-		const parsed = simpleMasterSchema.safeParse(formToObject(fd, ['active']));
-		if (!parsed.success) return formError('error.invalid');
-		const id = idOf(fd);
-		try {
-			if (id) await db.update(auctionItem).set(parsed.data).where(eq(auctionItem.id, id));
-			else await db.insert(auctionItem).values(parsed.data);
-		} catch (e) {
-			if (isUniqueViolation(e)) return formError('error.duplicate');
-			throw e;
-		}
-		await writeAudit({ organizationId: null, actorUserId: ctx.user.id, action: id ? 'master.item_update' : 'master.item_create', targetType: 'auction_item', targetId: id, detail: parsed.data });
 		return { ok: true };
 	},
 

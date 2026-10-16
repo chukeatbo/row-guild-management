@@ -8,15 +8,15 @@
 	let { data } = $props();
 	const t = useT();
 
-	type Tab = 'classes' | 'bosses' | 'items' | 'guilds';
+	type Tab = 'classes' | 'bosses' | 'guilds';
 	let tab = $state<Tab>('classes');
 	let open = $state(false);
 	let editing: Record<string, any> | null = $state(null);
 	let error: string | null = $state(null);
 
-	const TABS: Tab[] = ['classes', 'bosses', 'items', 'guilds'];
-	const ACTIONS = { classes: 'saveClass', bosses: 'saveBoss', items: 'saveItem', guilds: 'createGuild' } as const;
-	const ADD_LABEL = { classes: 'admin.addClass', bosses: 'admin.addBoss', items: 'admin.addItem', guilds: 'admin.createGuild' } as const;
+	const TABS: Tab[] = ['classes', 'bosses', 'guilds'];
+	const ACTIONS = { classes: 'saveClass', bosses: 'saveBoss', guilds: 'createGuild' } as const;
+	const ADD_LABEL = { classes: 'admin.addClass', bosses: 'admin.addBoss', guilds: 'admin.createGuild' } as const;
 	const ROLES = ['tank', 'dps', 'healer', 'support'] as const;
 
 	function openEditor(row: Record<string, any> | null) {
@@ -34,7 +34,7 @@
 		open = false;
 	};
 
-	const masterRows = $derived(tab === 'bosses' ? data.bosses : data.items);
+	const masterRows = $derived(data.bosses);
 </script>
 
 <svelte:head><title>{t('admin.title')} · {t('app.name')}</title></svelte:head>

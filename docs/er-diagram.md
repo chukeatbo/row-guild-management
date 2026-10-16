@@ -1,5 +1,7 @@
 # ER Diagram
 
+> ระบบชำระเงิน (`packages`, `orders`, `payment`, `refund`, `guild_subscription`, `omise_webhook_event`) แยกไว้ที่ [billing.md](billing.md)
+
 ตารางสีเทา `user / session / account / verification / organization / member / invitation` สร้างโดย Better Auth CLI
 (`pnpm auth:generate` → `packages/db/src/schema/auth.ts`) **ห้ามแก้มือ** ที่เหลืออยู่ใน `packages/db/src/schema/*.ts`
 
