@@ -239,6 +239,8 @@ export const th: Messages = {
 	'auction.noCharacters': 'เพิ่มตัวละครที่หน้าสมาชิกก่อนจึงจะลงคิวได้',
 	'auction.history': 'มอบล่าสุด',
 	'auction.wonBy': 'มอบให้',
+	'auction.prevPage': 'หน้าก่อนหน้า',
+	'auction.nextPage': 'หน้าถัดไป',
 	'error.auctionClosed': 'คิวนี้ปิดไปแล้ว',
 	'error.alreadyInQueue': 'คุณอยู่ในคิวนี้แล้ว',
 	'error.deadlinePassed': 'เลยเวลาลาแล้ว กรุณาติดต่อ Officer',

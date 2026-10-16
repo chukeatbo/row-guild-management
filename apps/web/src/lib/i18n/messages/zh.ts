@@ -234,6 +234,8 @@ export const zh: Messages = {
 	'auction.noCharacters': '请先在成员页面添加角色才能排队。',
 	'auction.history': '最近授予',
 	'auction.wonBy': '授予给',
+	'auction.prevPage': '上一页',
+	'auction.nextPage': '下一页',
 	'error.auctionClosed': '该队列已关闭。',
 	'error.alreadyInQueue': '你已在此队列中。',
 	'error.deadlinePassed': '已过请假截止时间，请联系干部。',

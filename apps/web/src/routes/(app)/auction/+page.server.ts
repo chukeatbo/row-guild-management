@@ -10,7 +10,6 @@ import type { Actions, PageServerLoad } from './$types';
 
 type Ctx = Awaited<ReturnType<typeof requireGuild>>;
 const canManage = (ctx: Ctx) => ctx.isSuper || can(ctx.role, 'auction', 'close');
-const HISTORY_LIMIT = 10;
 
 export const load: PageServerLoad = async (event) => {
 	const ctx = await requireGuild(event);
@@ -23,20 +22,20 @@ export const load: PageServerLoad = async (event) => {
 		.where(and(eq(auction.organizationId, ctx.guild.id), eq(auction.status, 'queued')))
 		.orderBy(asc(auction.createdAt));
 
-	const awards = await db
-		.select({
-			id: auctionAward.id,
-			itemName: auctionItem.name,
-			characterId: auctionAward.characterId,
-			ign: auctionAward.ign,
-			createdAt: auctionAward.createdAt
-		})
-		.from(auctionAward)
-		.innerJoin(auction, eq(auctionAward.auctionId, auction.id))
-		.innerJoin(auctionItem, eq(auction.itemId, auctionItem.id))
-		.where(eq(auction.organizationId, ctx.guild.id))
-		.orderBy(desc(auctionAward.createdAt))
-		.limit(HISTORY_LIMIT);
+	// log การมอบทั้งหมดของแต่ละคิว (แบ่งหน้าฝั่ง UI)
+	const awards = open.length
+		? await db
+				.select({
+					id: auctionAward.id,
+					auctionId: auctionAward.auctionId,
+					characterId: auctionAward.characterId,
+					ign: auctionAward.ign,
+					createdAt: auctionAward.createdAt
+				})
+				.from(auctionAward)
+				.where(inArray(auctionAward.auctionId, open.map((o) => o.id)))
+				.orderBy(desc(auctionAward.createdAt))
+		: [];
 
 	const entries = open.length
 		? await db
@@ -81,18 +80,19 @@ export const load: PageServerLoad = async (event) => {
 				itemName: o.itemName,
 				entries: list.map(({ userId: _u, ...rest }) => rest),
 				joined: list.some((e) => e.mine),
-				available
-			};
-		}),
-		history: awards.map((a) => {
-			const c = a.characterId ? byId.get(a.characterId) : undefined;
-			return {
-				id: a.id,
-				itemName: a.itemName,
-				ign: a.ign,
-				className: c?.className ?? null,
-				classColor: c?.classColor ?? null,
-				at: a.createdAt.toISOString()
+				available,
+				history: awards
+					.filter((a) => a.auctionId === o.id)
+					.map((a) => {
+						const c = a.characterId ? byId.get(a.characterId) : undefined;
+						return {
+							id: a.id,
+							ign: a.ign,
+							className: c?.className ?? null,
+							classColor: c?.classColor ?? null,
+							at: a.createdAt.toISOString()
+						};
+					})
 			};
 		}),
 		mine: characters
