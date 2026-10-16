@@ -292,6 +292,8 @@ export const fil: Messages = {
 	'auction.noCharacters': 'Magdagdag muna ng character sa Members page para makasali.',
 	'auction.history': 'Kamakailang naibigay',
 	'auction.wonBy': 'Ibinigay kay',
+	'auction.prevPage': 'Nakaraang pahina',
+	'auction.nextPage': 'Susunod na pahina',
 	'error.auctionClosed': 'Sarado na ang queue na ito.',
 	'error.alreadyInQueue': 'Nasa queue ka na.',
 	'error.deadlinePassed': 'Lampas na ang deadline ng leave. Makipag-ugnayan sa Officer.',

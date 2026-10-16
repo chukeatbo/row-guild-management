@@ -290,6 +290,8 @@ export const en = {
 	'auction.noCharacters': 'Add a character on the Members page to join queues.',
 	'auction.history': 'Recently awarded',
 	'auction.wonBy': 'Awarded to',
+	'auction.prevPage': 'Previous page',
+	'auction.nextPage': 'Next page',
 	'error.auctionClosed': 'This queue is already closed.',
 	'error.alreadyInQueue': 'You are already in this queue.',
 	'error.deadlinePassed': 'The leave deadline has passed. Ask an Officer.',

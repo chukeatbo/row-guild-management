@@ -292,6 +292,8 @@ export const id: Messages = {
 	'auction.noCharacters': 'Tambahkan karakter di halaman Anggota agar bisa ikut antrean.',
 	'auction.history': 'Baru diberikan',
 	'auction.wonBy': 'Diberikan kepada',
+	'auction.prevPage': 'Halaman sebelumnya',
+	'auction.nextPage': 'Halaman berikutnya',
 	'error.auctionClosed': 'Antrean ini sudah ditutup.',
 	'error.alreadyInQueue': 'Kamu sudah ada di antrean ini.',
 	'error.deadlinePassed': 'Batas waktu izin telah lewat. Hubungi Officer.',

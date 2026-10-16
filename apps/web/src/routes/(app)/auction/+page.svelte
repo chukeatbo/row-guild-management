@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Check, Gavel, LogIn, LogOut, Plus, Send, Trash2, X } from '@lucide/svelte';
+	import { Check, ChevronLeft, ChevronRight, Gavel, History, LogIn, LogOut, Plus, Send, Trash2, X } from '@lucide/svelte';
 	import ClassBadge from '#lib/components/ClassBadge.svelte';
 	import Combobox from '#lib/components/Combobox.svelte';
 	import { formatDateTime } from '#lib/datetime.ts';
@@ -11,6 +11,10 @@
 	const t = useT();
 	const locale = useLocale();
 	const tz = useTimezone();
+
+	/** log การมอบ: หน้าละกี่รายการ + หน้าปัจจุบันของแต่ละคิว (0-based) */
+	const HISTORY_PAGE_SIZE = 5;
+	let historyPage = $state<Record<string, number>>({});
 
 	let error = $state<string | null>(null);
 	let errorTimer: ReturnType<typeof setTimeout> | undefined;
@@ -177,21 +181,47 @@
 					<button class="btn-primary shrink-0"><LogIn size={15} />{t('auction.join')}</button>
 				</form>
 			{/if}
+
+			{#if q.history.length}
+				{@const pages = Math.ceil(q.history.length / HISTORY_PAGE_SIZE)}
+				{@const page = Math.min(historyPage[q.id] ?? 0, pages - 1)}
+				<!-- log การมอบของคิวนี้ -->
+				<details class="group border-t border-border pt-2" data-history={q.itemName}>
+					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-muted-foreground select-none hover:text-foreground">
+						<ChevronRight size={14} class="transition group-open:rotate-90" />
+						<History size={13} />{t('auction.history')} ({q.history.length})
+					</summary>
+					<ul class="mt-2 space-y-1">
+						{#each q.history.slice(page * HISTORY_PAGE_SIZE, (page + 1) * HISTORY_PAGE_SIZE) as h (h.id)}
+							<li class="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md bg-muted/50 px-2 py-1 text-xs">
+								<span class="text-muted-foreground">{t('auction.wonBy')}</span>
+								<span class="min-w-0 truncate font-medium">{h.ign}</span>
+								{#if h.className}<ClassBadge name={h.className} color={h.classColor} />{/if}
+								<span class="ml-auto text-muted-foreground">{formatDateTime(h.at, locale(), tz())}</span>
+							</li>
+						{/each}
+					</ul>
+					{#if pages > 1}
+						<div class="mt-2 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+							<button
+								type="button"
+								class="btn-ghost btn-sm p-1"
+								disabled={page === 0}
+								aria-label={t('auction.prevPage')}
+								onclick={() => (historyPage[q.id] = page - 1)}><ChevronLeft size={14} /></button
+							>
+							<span class="tabular-nums">{page + 1} / {pages}</span>
+							<button
+								type="button"
+								class="btn-ghost btn-sm p-1"
+								disabled={page >= pages - 1}
+								aria-label={t('auction.nextPage')}
+								onclick={() => (historyPage[q.id] = page + 1)}><ChevronRight size={14} /></button
+							>
+						</div>
+					{/if}
+				</details>
+			{/if}
 		</section>
 	{/each}
 </div>
-
-{#if data.history.length}
-	<h2 class="mt-8 text-sm font-medium text-muted-foreground">{t('auction.history')}</h2>
-	<ul class="mt-2 divide-y divide-border rounded-lg border border-border">
-		{#each data.history as h (h.id)}
-			<li class="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
-				<span class="min-w-0 flex-1 truncate font-medium">{h.itemName}</span>
-				<span class="text-xs text-muted-foreground">{t('auction.wonBy')}</span>
-				<span class="font-medium">{h.ign}</span>
-				{#if h.className}<ClassBadge name={h.className} color={h.classColor} />{/if}
-				<span class="text-xs text-muted-foreground">{formatDateTime(h.at, locale(), tz())}</span>
-			</li>
-		{/each}
-	</ul>
-{/if}

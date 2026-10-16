@@ -82,7 +82,7 @@
 									{#if lv.canCancel}
 										<form method="POST" action="?/cancel" use:enhance={submit}>
 											<input type="hidden" name="leaveId" value={lv.id} />
-											<button class="btn-secondary btn-sm">{t('leave.cancel')}</button>
+											<button class="btn-danger btn-sm">{t('leave.cancel')}</button>
 										</form>
 									{/if}
 								{:else if ev.deadlinePassed && !data.canAny}
