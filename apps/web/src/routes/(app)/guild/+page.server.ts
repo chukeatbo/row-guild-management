@@ -84,8 +84,11 @@ export const actions: Actions = {
 			}
 		}
 		const parsed = guildProfileSchema.safeParse(raw);
-		if (!parsed.success)
-			return formError(parsed.error.issues.some((i) => String(i.path[0]).endsWith('Id')) ? 'error.invalidDiscordId' : 'error.invalid');
+		if (!parsed.success) {
+			// บอกช่องที่ผิดด้วย เพื่อให้หน้าจอไฮไลต์ช่องนั้น
+			const bad = parsed.error.issues.map((i) => String(i.path[0])).find((p) => p.endsWith('Id'));
+			return bad ? formError('error.invalidDiscordId', 400, { field: bad }) : formError('error.invalid');
+		}
 		const { name, ...fields } = parsed.data;
 		// ช่องที่ล้างว่างต้องเขียนเป็น null (undefined ถูก drizzle ข้าม → ล้างค่าเดิมไม่ได้)
 		const profile = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v ?? null])) as { [K in keyof typeof fields]: string | null };

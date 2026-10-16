@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Check } from '@lucide/svelte';
-	import { extractDiscordId, isDiscordId } from '@row/shared';
+	import { extractDiscordId, isDiscordId, serverIdFromChannelLink } from '@row/shared';
 	import { weekdayName } from '#lib/datetime.ts';
 	import { useLocale, useT, type MessageKey } from '#lib/i18n/index.ts';
 
 	let { data, form } = $props();
 	const t = useT();
 	let saved = $state(false);
+	let failed = $state<string | null>(null); // error key ของการบันทึกล่าสุดที่ล้มเหลว
+	let badField = $state<string | null>(null);
 	let savedType = $state<string | null>(null);
 	const locale = useLocale();
 	const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // จันทร์เป็นวันแรก
@@ -15,8 +17,14 @@
 	/** วางลิงก์ที่คัดลอกมา → แปลงเป็น ID ให้ทันทีตอนออกจากช่อง */
 	const normalize = (e: FocusEvent) => {
 		const el = e.currentTarget as HTMLInputElement;
-		const id = extractDiscordId(el.value, el.name === 'discordGuildId' ? 'server' : 'channel');
+		badField = null;
+		const raw = el.value;
+		const id = extractDiscordId(raw, el.name === 'discordGuildId' ? 'server' : 'channel');
 		if (isDiscordId(id)) el.value = id;
+		// วางลิงก์ห้อง + ช่อง server ว่าง → เติม server ID จากลิงก์ด้วย (ก่อนที่ลิงก์จะถูกแปลงเป็น ID ห้อง)
+		const sid = serverIdFromChannelLink(raw);
+		const serverInput = el.form?.elements.namedItem('discordGuildId') as HTMLInputElement | null;
+		if (sid && serverInput && !serverInput.value.trim()) serverInput.value = sid;
 	};
 
 	const fields = [
@@ -40,14 +48,23 @@
 	method="POST"
 	action="?/save"
 	class="mt-6 max-w-2xl space-y-6"
-	use:enhance={() => async ({ update }) => {
+	use:enhance={() => async ({ result, update }) => {
 		await update({ reset: false });
-		saved = true;
-		setTimeout(() => (saved = false), 2000);
+		// แสดง "บันทึกแล้ว" เฉพาะเมื่อสำเร็จจริง; ล้มเหลวให้บอกเหตุผลตรงปุ่ม + ไฮไลต์ช่องที่ผิด
+		if (result.type === 'success') {
+			failed = null;
+			badField = null;
+			saved = true;
+			setTimeout(() => (saved = false), 2000);
+		} else {
+			saved = false;
+			failed = (result.type === 'failure' ? (result.data?.error as string) : null) ?? 'error.generic';
+			badField = result.type === 'failure' ? ((result.data?.field as string | undefined) ?? null) : null;
+			if (badField) document.getElementById(badField)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		}
 	}}
 >
 	<fieldset disabled={!data.canEditGuild} class="card space-y-4">
-		{#if form?.error}<p class="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{t(form.error as MessageKey)}</p>{/if}
 		<div>
 			<label class="label" for="name">{t('guild.name')}</label>
 			<input id="name" name="name" class="input" required maxlength="60" value={data.guild.name} />
@@ -75,7 +92,7 @@
 			{#each fields as f (f.name)}
 				<div>
 					<label class="label" for={f.name}>{t(f.label as MessageKey)}</label>
-					<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono" value={data.guild[f.name]} />
+					<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono {badField === f.name ? 'border-danger' : ''}" aria-invalid={badField === f.name} value={data.guild[f.name]} />
 				</div>
 			{/each}
 		</div>
@@ -86,7 +103,7 @@
 				{#each imageFields as f (f.name)}
 					<div>
 						<label class="label" for={f.name}>{t(f.label as MessageKey)}</label>
-						<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono" value={data.guild[f.name]} />
+						<input id={f.name} name={f.name} autocomplete="off" onblur={normalize} placeholder={t('guild.idPlaceholder')} class="input font-mono {badField === f.name ? 'border-danger' : ''}" aria-invalid={badField === f.name} value={data.guild[f.name]} />
 					</div>
 				{/each}
 			</div>
@@ -97,6 +114,7 @@
 		<div class="flex items-center gap-3">
 			<button class="btn-primary">{t('common.save')}</button>
 			{#if saved}<span class="animate-pop inline-flex items-center gap-1.5 text-sm text-success"><Check size={15} />{t('common.saved')}</span>{/if}
+			{#if failed}<span class="animate-pop text-sm text-danger" role="alert">{t(failed as MessageKey)}</span>{/if}
 		</div>
 	{/if}
 </form>
@@ -113,8 +131,9 @@
 			method="POST"
 			action="?/saveSchedule"
 			class="card"
-			use:enhance={() => async ({ update }) => {
+			use:enhance={() => async ({ result, update }) => {
 				await update({ reset: false });
+				if (result.type !== 'success') return; // ล้มเหลว: ไม่แสดง "บันทึกแล้ว"
 				savedType = s.type;
 				setTimeout(() => (savedType = null), 2000);
 			}}
