@@ -17,7 +17,9 @@ export type DiscordJob =
   /** มีคนลา/ยกเลิกลา → แจ้งห้อง notify */
   | { type: 'leave'; orgId: string; eventId: string; ign: string; reason: string | null; cancelled: boolean; byOther: boolean }
   /** Officer มอบไอเทมประมูล → แจ้งห้องประมูล */
-  | { type: 'auction_award'; orgId: string; item: string; ign: string };
+  | { type: 'auction_award'; orgId: string; item: string; ign: string }
+  /** แพ็กเกจของกิลด์ใกล้หมดอายุ (เว็บ /api/internal/billing-reminders ส่งเข้าคิว) */
+  | { type: 'billing_reminder'; orgId: string; daysLeft: number; endsAt: string; renewUrl: string };
 
 /** ห้องส่งรูปปาร์ตี้ของกิลด์ (แยกตามกิจกรรม) */
 export interface ImageChannels {

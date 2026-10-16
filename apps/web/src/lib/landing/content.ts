@@ -4,7 +4,6 @@
  */
 export type Lang = 'th' | 'en' | 'id' | 'fil' | 'zh';
 export type FeatureIcon = 'swords' | 'calendar' | 'repeat' | 'gavel' | 'bot' | 'users' | 'shield' | 'globe';
-export type PlanId = 'trial' | 'guild' | 'pro';
 
 export type Content = {
 	meta: { title: string; description: string };
@@ -26,11 +25,16 @@ export type Content = {
 		title: string;
 		lead: string;
 		perMonth: string;
+		/** ราคาต่อรอบที่ไม่ใช่ 30 วัน — `{n}` = จำนวนวัน */
+		perDays: string;
 		free: string;
-		askPrice: string;
 		popular: string;
 		note: string;
-		plans: { id: PlanId; name: string; desc: string; features: string[]; cta: string }[];
+		/** ปุ่มของแพ็กเกจทดลองใช้ / แพ็กเกจที่ต้องจ่าย (ตัวแพ็กเกจมาจาก DB ตาราง packages) */
+		ctaTrial: string;
+		ctaBuy: string;
+		/** ยังไม่มีแพ็กเกจเปิดขาย */
+		empty: string;
 	};
 	faq: { eyebrow: string; title: string; items: { q: string; a: string }[] };
 	contact: { title: string; lead: string; discord: string; line: string; facebook: string };
@@ -107,7 +111,7 @@ const th: Content = {
 		eyebrow: 'เริ่มใช้งาน',
 		title: 'พร้อมจัดวอร์ภายในวันเดียว',
 		items: [
-			{ title: 'ติดต่อเรา', body: 'ทักมาทาง Discord / LINE / Facebook เราเปิดกิลด์ให้และตั้ง GM เป็นเจ้าของ' },
+			{ title: 'เลือกแพ็กเกจ & สร้างกิลด์', body: 'ทดลองใช้ฟรีหรือชำระเงิน แล้ว login ด้วย Discord สร้างกิลด์ได้เองทันที คุณเป็น GM ของกิลด์' },
 			{ title: 'เชิญบอทเข้า Discord', body: 'เลือกห้องแจ้งเตือนและห้องส่งรูปปาร์ตี้ของแต่ละกิจกรรม' },
 			{ title: 'ให้สมาชิก Login', body: 'สมาชิก login ด้วย Discord แล้วเพิ่มตัวละคร — เริ่มลาก-วางจัดทัพได้เลย' }
 		]
@@ -117,39 +121,13 @@ const th: Content = {
 		title: 'ราคาเดียว ใช้ได้ทั้งกิลด์',
 		lead: 'คิดราคาต่อกิลด์ ไม่ใช่ต่อคน สมาชิกทุกคนใช้ได้ไม่มีค่าใช้จ่ายเพิ่ม',
 		perMonth: '/เดือน',
+		perDays: '/{n} วัน',
 		free: 'ฟรี',
-		askPrice: 'สอบถาม',
 		popular: 'ยอดนิยม',
-		note: 'ชำระผ่านโอน / พร้อมเพย์ ติดต่อทีมงานเพื่อเปิดใช้งาน',
-		plans: [
-			{
-				id: 'trial',
-				name: 'ทดลองใช้',
-				desc: 'ลองครบทุกฟีเจอร์ 14 วัน',
-				features: ['ทุกฟีเจอร์ของแพ็กเกจ Guild', '1 กิลด์', 'ไม่ต้องผูกบัตร'],
-				cta: 'เริ่มทดลอง'
-			},
-			{
-				id: 'guild',
-				name: 'Guild',
-				desc: 'สำหรับกิลด์ที่ลงวอร์ทุกสัปดาห์',
-				features: [
-					'Party Builder GL / Siege / Polarity',
-					'ระบบลา + ตารางวอร์อัตโนมัติ',
-					'คิวประมูลกิลด์',
-					'บอท Discord แจ้งเตือน + ส่งรูป',
-					'สมาชิกสูงสุด 150 คน'
-				],
-				cta: 'เลือกแพ็กเกจนี้'
-			},
-			{
-				id: 'pro',
-				name: 'Alliance',
-				desc: 'สำหรับหลายกิลด์ในเครือเดียวกัน',
-				features: ['ทุกอย่างใน Guild', 'สูงสุด 3 กิลด์', 'ซัพพอร์ตด่วนทาง Discord', 'ขอฟีเจอร์เพิ่มได้'],
-				cta: 'เลือกแพ็กเกจนี้'
-			}
-		]
+		note: 'ชำระผ่าน Omise — พร้อมเพย์ บัตร และช่องทางอื่นๆ ใช้งานได้ทันทีหลังชำระเงิน',
+		ctaTrial: 'เริ่มทดลอง',
+		ctaBuy: 'เลือกแพ็กเกจนี้',
+		empty: 'ยังไม่มีแพ็กเกจเปิดขาย ติดต่อเราได้เลย'
 	},
 	faq: {
 		eyebrow: 'คำถามพบบ่อย',
@@ -256,7 +234,7 @@ const en: Content = {
 		eyebrow: 'Getting started',
 		title: 'Ready for war in a day',
 		items: [
-			{ title: 'Contact us', body: 'Message us on Discord / LINE / Facebook. We create your guild and make your GM the owner.' },
+			{ title: 'Pick a plan & create your guild', body: 'Start a free trial or pay, log in with Discord and create your guild yourself — you become its GM.' },
 			{ title: 'Invite the bot', body: 'Pick a reminder channel and an image channel for each activity.' },
 			{ title: 'Members log in', body: 'Members sign in with Discord and add their characters — start dragging parties right away.' }
 		]
@@ -266,39 +244,13 @@ const en: Content = {
 		title: 'One price for the whole guild',
 		lead: 'Priced per guild, not per player. Every member can use it at no extra cost.',
 		perMonth: '/month',
+		perDays: '/{n} days',
 		free: 'Free',
-		askPrice: 'Contact us',
 		popular: 'Most popular',
-		note: 'Pay by bank transfer / PromptPay. Contact us to activate your guild.',
-		plans: [
-			{
-				id: 'trial',
-				name: 'Trial',
-				desc: 'Every feature for 14 days',
-				features: ['Everything in Guild', '1 guild', 'No card required'],
-				cta: 'Start trial'
-			},
-			{
-				id: 'guild',
-				name: 'Guild',
-				desc: 'For guilds that fight every week',
-				features: [
-					'Party builder for GL / Siege / Polarity',
-					'Leave requests + automatic schedule',
-					'Guild auction queue',
-					'Discord reminders + images',
-					'Up to 150 members'
-				],
-				cta: 'Choose this plan'
-			},
-			{
-				id: 'pro',
-				name: 'Alliance',
-				desc: 'For several guilds in one alliance',
-				features: ['Everything in Guild', 'Up to 3 guilds', 'Priority support on Discord', 'Feature requests'],
-				cta: 'Choose this plan'
-			}
-		]
+		note: 'Secure payment via Omise — PromptPay, cards and more. Your guild is ready right after payment.',
+		ctaTrial: 'Start trial',
+		ctaBuy: 'Choose this plan',
+		empty: 'No plans are on sale yet — contact us.'
 	},
 	faq: {
 		eyebrow: 'FAQ',
@@ -408,7 +360,7 @@ const id: Content = {
 		eyebrow: 'Mulai',
 		title: 'Siap war dalam sehari',
 		items: [
-			{ title: 'Hubungi kami', body: 'Kirim pesan lewat Discord / LINE / Facebook. Kami buatkan guild Anda dan jadikan GM sebagai pemilik.' },
+			{ title: 'Pilih paket & buat guild', body: 'Mulai uji coba gratis atau bayar, login dengan Discord lalu buat guild sendiri — Anda menjadi GM-nya.' },
 			{ title: 'Undang bot', body: 'Pilih channel pengingat dan channel gambar untuk setiap aktivitas.' },
 			{ title: 'Member login', body: 'Member masuk dengan Discord lalu menambahkan karakter — langsung mulai susun party.' }
 		]
@@ -418,39 +370,13 @@ const id: Content = {
 		title: 'Satu harga untuk seluruh guild',
 		lead: 'Harga per guild, bukan per pemain. Semua member bisa memakainya tanpa biaya tambahan.',
 		perMonth: '/bulan',
+		perDays: '/{n} hari',
 		free: 'Gratis',
-		askPrice: 'Hubungi kami',
 		popular: 'Terpopuler',
-		note: 'Pembayaran via transfer bank / PromptPay. Hubungi kami untuk mengaktifkan guild Anda.',
-		plans: [
-			{
-				id: 'trial',
-				name: 'Uji coba',
-				desc: 'Semua fitur selama 14 hari',
-				features: ['Semua fitur paket Guild', '1 guild', 'Tanpa kartu'],
-				cta: 'Mulai uji coba'
-			},
-			{
-				id: 'guild',
-				name: 'Guild',
-				desc: 'Untuk guild yang war setiap minggu',
-				features: [
-					'Party builder GL / Siege / Polarity',
-					'Izin absen + jadwal otomatis',
-					'Antrean lelang guild',
-					'Pengingat + gambar di Discord',
-					'Hingga 150 member'
-				],
-				cta: 'Pilih paket ini'
-			},
-			{
-				id: 'pro',
-				name: 'Alliance',
-				desc: 'Untuk beberapa guild dalam satu aliansi',
-				features: ['Semua fitur Guild', 'Hingga 3 guild', 'Dukungan prioritas di Discord', 'Bisa request fitur'],
-				cta: 'Pilih paket ini'
-			}
-		]
+		note: 'Pembayaran aman via Omise — PromptPay, kartu, dan lainnya. Guild langsung aktif setelah pembayaran.',
+		ctaTrial: 'Mulai uji coba',
+		ctaBuy: 'Pilih paket ini',
+		empty: 'Belum ada paket yang dijual — hubungi kami.'
 	},
 	faq: {
 		eyebrow: 'FAQ',
@@ -560,7 +486,7 @@ const fil: Content = {
 		eyebrow: 'Pagsisimula',
 		title: 'Handa na sa war sa loob ng isang araw',
 		items: [
-			{ title: 'Kontakin kami', body: 'Mag-message sa Discord / LINE / Facebook. Gagawin namin ang guild mo at gagawing owner ang GM.' },
+			{ title: 'Pumili ng plan at gumawa ng guild', body: 'Mag-free trial o magbayad, mag-log in gamit ang Discord at gumawa ng sarili mong guild — ikaw ang GM nito.' },
 			{ title: 'I-invite ang bot', body: 'Pumili ng reminder channel at image channel para sa bawat activity.' },
 			{ title: 'Mag-log in ang members', body: 'Mag-sign in ang members gamit ang Discord at idagdag ang kanilang characters — puwede nang mag-drag ng party agad.' }
 		]
@@ -570,39 +496,13 @@ const fil: Content = {
 		title: 'Iisang presyo para sa buong guild',
 		lead: 'Presyo bawat guild, hindi bawat player. Lahat ng member ay makakagamit nang walang dagdag na bayad.',
 		perMonth: '/buwan',
+		perDays: '/{n} araw',
 		free: 'Libre',
-		askPrice: 'Kontakin kami',
 		popular: 'Pinakasikat',
-		note: 'Bayad sa bank transfer / PromptPay. Kontakin kami para ma-activate ang guild mo.',
-		plans: [
-			{
-				id: 'trial',
-				name: 'Trial',
-				desc: 'Lahat ng feature sa loob ng 14 na araw',
-				features: ['Lahat ng nasa Guild', '1 guild', 'Hindi kailangan ng card'],
-				cta: 'Simulan ang trial'
-			},
-			{
-				id: 'guild',
-				name: 'Guild',
-				desc: 'Para sa mga guild na lumalaban linggo-linggo',
-				features: [
-					'Party builder para sa GL / Siege / Polarity',
-					'Leave + awtomatikong iskedyul',
-					'Guild auction queue',
-					'Discord reminders + larawan',
-					'Hanggang 150 member'
-				],
-				cta: 'Piliin ang plan na ito'
-			},
-			{
-				id: 'pro',
-				name: 'Alliance',
-				desc: 'Para sa ilang guild sa iisang alliance',
-				features: ['Lahat ng nasa Guild', 'Hanggang 3 guild', 'Priority support sa Discord', 'Puwedeng mag-request ng feature'],
-				cta: 'Piliin ang plan na ito'
-			}
-		]
+		note: 'Ligtas na bayad sa Omise — PromptPay, card at iba pa. Handa agad ang guild mo pagkatapos magbayad.',
+		ctaTrial: 'Simulan ang trial',
+		ctaBuy: 'Piliin ang plan na ito',
+		empty: 'Wala pang plan na mabibili — kontakin kami.'
 	},
 	faq: {
 		eyebrow: 'FAQ',
@@ -712,7 +612,7 @@ const zh: Content = {
 		eyebrow: '开始使用',
 		title: '一天内即可开打',
 		items: [
-			{ title: '联系我们', body: '通过 Discord / LINE / Facebook 联系我们，我们为你开通公会并将会长设为所有者。' },
+			{ title: '选择套餐并创建公会', body: '免费试用或付款后，使用 Discord 登录即可自行创建公会，你就是会长。' },
 			{ title: '邀请机器人', body: '为每项活动选择提醒频道和图片频道。' },
 			{ title: '成员登录', body: '成员使用 Discord 登录并添加角色 —— 立即开始拖放排阵。' }
 		]
@@ -722,33 +622,13 @@ const zh: Content = {
 		title: '一个价格，全公会通用',
 		lead: '按公会收费，而不是按人数。所有成员均可使用，无需额外费用。',
 		perMonth: '/月',
+		perDays: '/{n} 天',
 		free: '免费',
-		askPrice: '咨询',
 		popular: '最受欢迎',
-		note: '支持银行转账 / PromptPay 付款。请联系我们开通公会。',
-		plans: [
-			{
-				id: 'trial',
-				name: '试用',
-				desc: '14 天体验全部功能',
-				features: ['包含 Guild 套餐全部功能', '1 个公会', '无需绑卡'],
-				cta: '开始试用'
-			},
-			{
-				id: 'guild',
-				name: 'Guild',
-				desc: '适合每周参战的公会',
-				features: ['GL / Siege / Polarity 队伍编排', '请假 + 自动日程', '公会拍卖排队', 'Discord 提醒 + 图片', '最多 150 名成员'],
-				cta: '选择此套餐'
-			},
-			{
-				id: 'pro',
-				name: 'Alliance',
-				desc: '适合同一联盟的多个公会',
-				features: ['包含 Guild 全部功能', '最多 3 个公会', 'Discord 优先支持', '可提功能需求'],
-				cta: '选择此套餐'
-			}
-		]
+		note: '通过 Omise 安全支付 —— 支持 PromptPay、银行卡等多种方式，付款后立即开通公会。',
+		ctaTrial: '开始试用',
+		ctaBuy: '选择此套餐',
+		empty: '暂无在售套餐 —— 请联系我们。'
 	},
 	faq: {
 		eyebrow: '常见问题',

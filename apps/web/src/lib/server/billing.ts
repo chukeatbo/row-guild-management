@@ -1,12 +1,13 @@
 import { timingSafeEqual } from 'node:crypto';
 import { guildSubscription, member, order, organization, payment, pkg, refund } from '@row/db';
-import { and, asc, desc, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BillingError, Ignored } from './billing-error.ts';
 import { db } from './db.ts';
 import { isUniqueViolation } from './guard.ts';
 import type { OmiseCharge } from './omise.ts';
+import { sendReceiptOnce } from './receipt.ts';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Order = typeof order.$inferSelect;
 
 /** ออเดอร์ค้างจ่ายได้นานเท่านี้ (ราคาไม่ค้างยาวเกินไป) */
@@ -21,6 +22,16 @@ export function isLandingCall(request: Request) {
 	return got.length === want.length && timingSafeEqual(got, want);
 }
 
+/** สำเนาแพ็กเกจ ณ วันซื้อ (เก็บใน orders.package_snapshot) */
+export const packageSnapshot = (p: typeof pkg.$inferSelect): Order['packageSnapshot'] => ({
+	code: p.code,
+	name: p.name,
+	priceSatang: p.priceSatang,
+	currency: p.currency,
+	durationDays: p.durationDays,
+	limits: p.limits
+});
+
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // ตัด 0/O/1/I ที่อ่านสับสน
 export function newOrderNo(now = new Date()) {
 	const d = now.toISOString().slice(2, 10).replaceAll('-', ''); // yymmdd
@@ -29,7 +40,7 @@ export function newOrderNo(now = new Date()) {
 }
 
 /** ให้สิทธิ์กิลด์จากออเดอร์ที่จ่ายแล้ว — unique(order_id) ทำให้เรียกซ้ำปลอดภัย; ต่ออายุต่อท้ายสิทธิ์ที่ยังเหลือ */
-async function grantSubscription(tx: Tx, o: Order, now = new Date()) {
+export async function grantSubscription(tx: Tx, o: Order, now = new Date()) {
 	if (!o.organizationId) return null; // ยังไม่ผูกกิลด์ → ให้สิทธิ์ตอนผูก (ยังไม่ได้ทำ — ดู docs/billing.md)
 	const [last] = await tx
 		.select({ endsAt: guildSubscription.endsAt })
@@ -59,6 +70,8 @@ async function grantSubscription(tx: Tx, o: Order, now = new Date()) {
 		})
 		.onConflictDoNothing({ target: guildSubscription.orderId })
 		.returning({ id: guildSubscription.id });
+	// ทำเครื่องหมายว่าออเดอร์นี้ให้สิทธิ์แล้ว (กัน claim ซ้ำแม้กิลด์ถูกลบภายหลังจน organization_id เป็น null)
+	await tx.update(order).set({ grantedAt: now }).where(and(eq(order.id, o.id), isNull(order.grantedAt)));
 	return row ?? null;
 }
 
@@ -74,6 +87,7 @@ export interface CreateOrderInput {
 export async function createOrder(input: CreateOrderInput) {
 	const [p] = await db.select().from(pkg).where(eq(pkg.code, input.packageCode));
 	if (!p || !p.isActive) throw new BillingError('package_not_found', 404);
+	if (p.isTrial) throw new BillingError('package_not_found', 404); // ทดลองใช้ต้องผ่าน /start/trial (จำกัดครั้งเดียวต่อผู้ใช้)
 
 	if (input.organizationId) {
 		const [org] = await db.select({ id: organization.id }).from(organization).where(eq(organization.id, input.organizationId));
@@ -108,14 +122,7 @@ export async function createOrder(input: CreateOrderInput) {
 						userId: input.userId,
 						organizationId: input.organizationId ?? null,
 						packageId: p.id,
-						packageSnapshot: {
-							code: p.code,
-							name: p.name,
-							priceSatang: p.priceSatang,
-							currency: p.currency,
-							durationDays: p.durationDays,
-							limits: p.limits
-						},
+						packageSnapshot: packageSnapshot(p),
 						amountSatang: p.priceSatang,
 						currency: p.currency,
 						status: free ? 'paid' : 'pending',
@@ -174,6 +181,13 @@ export async function applyCharge(ch: OmiseCharge): Promise<ApplyResult> {
 	if (!found) throw new Ignored(`order ${orderId} not found`);
 
 	const status = mapStatus(ch);
+	const result = await applyChargeTx(ch, orderId, status);
+	// จ่ายสำเร็จ → อีเมลยืนยัน (ครั้งเดียวต่อออเดอร์; ส่งไม่ได้ไม่ทำให้ webhook ล้ม)
+	if (result.status === 'paid') await sendReceiptOnce(orderId).catch((e) => console.error('[receipt]', (e as Error).message));
+	return result;
+}
+
+async function applyChargeTx(ch: OmiseCharge, orderId: string, status: PaymentStatus): Promise<ApplyResult> {
 	return db.transaction(async (tx): Promise<ApplyResult> => {
 		// ล็อกแถวออเดอร์ กัน webhook หลายตัวชนกัน
 		await tx.execute(sql`select 1 from ${order} where ${order.id} = ${orderId} for update`);
@@ -295,7 +309,9 @@ export async function listPublicPackages() {
 			priceSatang: pkg.priceSatang,
 			currency: pkg.currency,
 			durationDays: pkg.durationDays,
-			features: pkg.features
+			features: pkg.features,
+			isTrial: pkg.isTrial,
+			isFeatured: pkg.isFeatured
 		})
 		.from(pkg)
 		.where(and(eq(pkg.isActive, true), eq(pkg.isPublic, true)))

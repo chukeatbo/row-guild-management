@@ -43,7 +43,13 @@ export async function handle(job: DiscordJob) {
       );
       return;
     }
-    case 'auction_award': {
+    case 'billing_reminder': {
+      const ch = (await channels(job.orgId)).notify;
+      if (!ch) return;
+      await postMessage(ch, msg.billingReminder({ daysLeft: job.daysLeft, when: bangkokTime(new Date(job.endsAt)), renewUrl: job.renewUrl }));
+      return;
+    }
+        case 'auction_award': {
       const ch = (await channels(job.orgId)).auction;
       if (!ch) return;
       await postMessage(ch, msg.award({ ign: job.ign, item: job.item }));

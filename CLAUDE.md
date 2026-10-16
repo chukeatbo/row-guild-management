@@ -186,6 +186,13 @@ pnpm typecheck
   - **ธีมแยกฝั่ง** (ผู้ใช้สั่ง, `lib/theme.ts`): landing/กฎหมาย = cookie `site-theme` ค่าเริ่มต้น **light**; ระบบ (login, แดชบอร์ด, render) = cookie `app-theme` ค่าเริ่มต้น **dark** — สลับฝั่งหนึ่งไม่กระทบอีกฝั่ง; `themeScope(path)` ตัดสินจาก `landingLangFromPath`; root layout ใส่ธีมใหม่เมื่อเดินข้ามฝั่งแบบ client-side; cookie `theme` เดิมเลิกใช้แล้ว
   - **sync ภาษา landing → ระบบ** (root `+layout.svelte`): เปิดหน้า landing/กฎหมายภาษาไหน ตั้ง cookie `locale` เป็นภาษานั้น (ยกเว้น `/` เมื่อ cookie เป็นภาษาที่ landing ไม่มี); landing มี th `/`, en, id, fil, zh — ภาษาใหม่ของระบบต้องเพิ่มใน `lib/landing/content.ts` + route `(marketing)/<lang>` ด้วย; ออกจากระบบ → ไปหน้า landing ตาม `locale`; ปุ่ม CTA/แพ็กเกจบน landing → `/login` หรือ `/dashboard` ถ้า login แล้ว
 
+- [x] **Billing: แพ็กเกจ + ทดลองใช้ + checkout Omise + สร้างกิลด์เอง + ล็อกเมื่อหมดอายุ + อีเมล + เตือนหมดอายุ** (ทดสอบ 91 เคส: trial/lock/cap 30, checkout กับ Omise test API จริง 36, อีเมล+token 15, เตือน 10; ยังไม่ได้ลองกดผ่าน UI ด้วย Discord login จริง) — รายละเอียด `docs/billing.md` หัวข้อ "Checkout ในเว็บ"
+  - แพ็กเกจอยู่ใน DB (`pnpm db:seed`): `trial` ฟรี 14 วัน 1 ครั้ง/ผู้ใช้, `guild-monthly` ฿299/30 วัน, สมาชิก ≤ 150 — ตัด Alliance แล้ว; landing render จาก DB
+  - flow: ปุ่มแพ็กเกจ → `/start/<code>` → (ทดลอง) สร้างกิลด์ / (จ่าย) `/checkout/<code>` → `/checkout/order/<id>` → สร้างกิลด์ (claim) หรือต่ออายุ; อีเมลยืนยันผ่าน Gmail SMTP มีปุ่ม `/claim?token=` (24 ชม., ครั้งเดียว, ต้องเป็น Discord ผู้ซื้อ)
+  - **กิลด์ต้องมีสิทธิ์**: `guild_profile.billing_exempt` (Super Admin สร้าง/กิลด์เดิม = ไม่จำกัด) หรือ `guild_subscription` ที่ยังไม่หมด — `getGuildAccess`/`guildActiveSql` ใน `@row/db`; หมดอายุ → `requireGuild` พาไป `/billing`, บอทหยุดเตือน; หน้าใหม่ที่ใช้ข้อมูลกิลด์ต้องผ่าน `requireGuild` (หรือเช็ค `ctx.access` เอง)
+  - `requireUser` พาไป `/login?next=` แล้วกลับหน้าเดิม (`lib/next.ts` `safeNext` กัน open redirect)
+  - dev webhook: `pnpm tunnel` (ngrok, `NGROK_DOMAIN`) — ดู `docs/SETUP.md`
+
 ## แนวทางทำงานร่วมกัน
 
 - งานใหญ่ให้ทำทีละ phase ตาม `docs/roadmap.md` และสรุปแผนสั้นๆ ก่อนลงมือ

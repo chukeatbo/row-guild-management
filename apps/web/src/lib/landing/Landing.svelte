@@ -23,6 +23,7 @@
 	import PartyMock from '#lib/landing/PartyMock.svelte';
 	import { content, langLocale, langPath, langs, type FeatureIcon, type Lang } from '#lib/landing/content.ts';
 	import { legalPath } from '#lib/landing/legal.ts';
+	import { localizePackage, type LandingPackage } from '#lib/landing/packages.ts';
 	import { site } from '#lib/landing/site.ts';
 	import { saveThemePref } from '#lib/theme.ts';
 
@@ -68,6 +69,11 @@
 	const loggedIn = $derived(!!page.data.user);
 	const appHref = $derived(loggedIn ? '/dashboard' : '/login');
 	const appLabel = $derived(loggedIn ? c.nav.dashboard : c.nav.login);
+
+	/** แพ็กเกจจาก DB — โหลดใน (marketing)/+layout.server.ts */
+	const packages = $derived((page.data.packages ?? []) as LandingPackage[]);
+	/** ปุ่มบนการ์ดแพ็กเกจ → /start/<code> (ทดลองใช้: สร้างกิลด์เลย / ต้องจ่าย: ต่อไปหน้า checkout) — ยังไม่ login จะผ่านหน้า login ก่อน */
+	const planHref = (p: LandingPackage) => `/start/${p.code}`;
 
 	const navLinks = $derived([
 		{ href: '#features', label: c.nav.features },
@@ -220,36 +226,46 @@
 				<h2 class="lp-section-title">{c.pricing.title}</h2>
 				<p class="lp-section-lead mx-auto">{c.pricing.lead}</p>
 			</div>
-			<div class="mx-auto mt-12 grid max-w-6xl gap-4 md:grid-cols-3 xl:gap-6">
-				{#each c.pricing.plans as p (p.id)}
-					{@const price = site.prices[p.id]}
-					{@const featured = p.id === 'guild'}
-					<div class="lp-card relative flex flex-col p-6 {featured ? 'border-primary ring-2 ring-primary/30 md:-my-3 md:py-9' : ''}">
-						{#if featured}
+			{#if packages.length === 0}
+				<p class="mx-auto mt-12 max-w-md text-center text-muted-foreground">{c.pricing.empty}</p>
+			{/if}
+			<!-- แพ็กเกจจาก DB (ตาราง packages) — ไม่ hardcode ราคาในหน้า -->
+			<div
+				class="mx-auto mt-12 grid gap-4 xl:gap-6 {packages.length >= 3
+					? 'max-w-6xl md:grid-cols-3'
+					: packages.length === 2
+						? 'max-w-4xl md:grid-cols-2'
+						: 'max-w-md'}"
+			>
+				{#each packages as p (p.code)}
+					{@const t = localizePackage(p, lang)}
+					<div class="lp-card relative flex flex-col p-6 {p.isFeatured ? 'border-primary ring-2 ring-primary/30 md:-my-3 md:py-9' : ''}">
+						{#if p.isFeatured}
 							<span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
 								{c.pricing.popular}
 							</span>
 						{/if}
-						<h3 class="text-lg font-semibold">{p.name}</h3>
-						<p class="mt-1 text-sm text-muted-foreground">{p.desc}</p>
+						<h3 class="text-lg font-semibold">{t.name}</h3>
+						<p class="mt-1 text-sm text-muted-foreground">{t.description}</p>
 						<p class="mt-5 flex items-baseline gap-1">
-							{#if price === null}
-								<span class="text-3xl font-bold">{c.pricing.askPrice}</span>
-							{:else if price === 0}
+							{#if p.priceSatang === 0}
 								<span class="text-4xl font-extrabold tracking-tight">{c.pricing.free}</span>
 							{:else}
-								<span class="text-4xl font-extrabold tracking-tight">{fmtPrice(price)}</span>
-								<span class="text-sm text-muted-foreground">{c.pricing.perMonth}</span>
+								<span class="text-4xl font-extrabold tracking-tight">{fmtPrice(p.priceSatang / 100)}</span>
+								{#if p.durationDays}
+									<span class="text-sm text-muted-foreground"
+										>{p.durationDays === 30 ? c.pricing.perMonth : c.pricing.perDays.replace('{n}', String(p.durationDays))}</span
+									>
+								{/if}
 							{/if}
 						</p>
 						<ul class="mt-6 flex-1 space-y-2.5 text-sm">
-							{#each p.features as f (f)}
+							{#each t.features as f (f)}
 								<li class="flex gap-2"><Check size={16} class="mt-0.5 shrink-0 text-success" />{f}</li>
 							{/each}
 						</ul>
-						<a
-							href={appHref}
-							class="{featured ? 'lp-btn-primary' : 'lp-btn-secondary'} mt-8 w-full">{p.cta}</a
+						<a href={planHref(p)} class="{p.isFeatured ? 'lp-btn-primary' : 'lp-btn-secondary'} mt-8 w-full"
+							>{p.isTrial ? c.pricing.ctaTrial : c.pricing.ctaBuy}</a
 						>
 					</div>
 				{/each}

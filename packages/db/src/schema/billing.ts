@@ -30,6 +30,10 @@ export const pkg = pgTable(
     limits: jsonb('limits').$type<Record<string, number | boolean | null>>().notNull().default({}),
     /** ข้อความขายที่โชว์บน landing (bullet) */
     features: jsonb('features').$type<string[]>().notNull().default([]),
+    /** แพ็กเกจทดลองใช้: ฟรี ไม่ผ่าน Omise ไม่ต้องกรอกอีเมล และใช้ได้ครั้งเดียวต่อผู้ใช้ (Discord) */
+    isTrial: boolean('is_trial').notNull().default(false),
+    /** ไฮไลต์บน landing (ป้าย "ยอดนิยม") */
+    isFeatured: boolean('is_featured').notNull().default(false),
     isActive: boolean('is_active').notNull().default(true), // false = ซื้อใหม่ไม่ได้ (ของเดิมที่ซื้อไปแล้วยังใช้ได้)
     isPublic: boolean('is_public').notNull().default(true), // false = ซ่อนจาก landing (ลิงก์ส่วนตัว/แพ็กเกจพิเศษ)
     sortOrder: integer('sort_order').notNull().default(0),
@@ -82,11 +86,19 @@ export const order = pgTable(
     /** ค้างจ่ายได้ถึงเมื่อไหร่ (หลังจากนี้ job ตั้งเป็น expired) */
     expiresAt: ts('expires_at'),
     paidAt: ts('paid_at'),
+    /** ให้สิทธิ์ (guild_subscription) จากออเดอร์นี้แล้วเมื่อ — null + paid = ยังไม่ได้สร้าง/ผูกกิลด์ (ผู้ซื้อ claim ได้) */
+    grantedAt: ts('granted_at'),
+    /** ลิงก์ในอีเมลยืนยัน (ใช้ครั้งเดียว): เก็บเฉพาะ SHA-256 ของ token ไม่เก็บ token จริง */
+    claimTokenHash: text('claim_token_hash'),
+    claimTokenExpiresAt: ts('claim_token_expires_at'),
+    /** ส่งอีเมลยืนยันการชำระเงินแล้วเมื่อ (กันส่งซ้ำเมื่อ webhook ซ้ำ) */
+    receiptSentAt: ts('receipt_sent_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt()
   },
   (t) => [
     uniqueIndex('order_no_uq').on(t.orderNo),
+    uniqueIndex('order_claim_token_uq').on(t.claimTokenHash),
     uniqueIndex('order_idempotency_uq').on(t.userId, t.idempotencyKey),
     index('order_user_idx').on(t.userId, t.createdAt),
     index('order_org_idx').on(t.organizationId),
@@ -193,6 +205,9 @@ export const guildSubscription = pgTable(
     limits: jsonb('limits').$type<Record<string, number | boolean | null>>().notNull().default({}),
     startsAt: ts('starts_at').notNull(),
     endsAt: ts('ends_at'), // null = ตลอดไป
+    /** ส่งเตือนใกล้หมดอายุแล้ว (อีเมล + Discord) — นับเฉพาะแถวที่หมดช้าสุดของกิลด์ (ต่ออายุแล้ว = แถวใหม่ เตือนใหม่) */
+    remind3dSentAt: ts('remind_3d_sent_at'),
+    remind1dSentAt: ts('remind_1d_sent_at'),
     createdAt: createdAt()
   },
   (t) => [

@@ -20,6 +20,11 @@ export const guildProfile = pgTable('guild_profile', {
   imagePolarityChannelId: text('image_polarity_channel_id'),
   auctionChannelId: text('auction_channel_id'),
   suspended: boolean('suspended').notNull().default(false),
+  /**
+   * ไม่ต้องมีแพ็กเกจ (ใช้ได้ไม่จำกัด) — กิลด์ที่ Super Admin สร้าง/กิลด์ที่มีก่อนระบบ billing
+   * กิลด์ที่ผู้ใช้สร้างเอง (ทดลอง/ซื้อ) = false → ต้องมี guild_subscription ที่ยังไม่หมดอายุ (ดู src/entitlement.ts)
+   */
+  billingExempt: boolean('billing_exempt').notNull().default(false),
   updatedAt: updatedAt()
 });
 

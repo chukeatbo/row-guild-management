@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
+import { safeNext } from '#lib/next.ts';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals }) => {
-	if (locals.user) redirect(303, '/dashboard');
+export const load: PageServerLoad = ({ locals, url }) => {
+	if (locals.user) redirect(303, safeNext(url.searchParams.get('next')));
 };

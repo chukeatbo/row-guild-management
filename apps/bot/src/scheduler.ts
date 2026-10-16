@@ -1,5 +1,5 @@
 import { DISCORD_QUEUE, eventImageTargets, type DiscordJob } from '@row/shared';
-import { eventLeave, guildEvent, guildProfile, notificationSent, partySlot } from '@row/db';
+import { eventLeave, guildActiveSql, guildEvent, guildProfile, notificationSent, partySlot } from '@row/db';
 import { Queue } from 'bullmq';
 import { and, count, eq, gt, inArray, lte } from 'drizzle-orm';
 import { postMessage } from './discord.ts';
@@ -10,19 +10,23 @@ import { bangkokTime, eventName, msg } from './messages.ts';
 const REMINDER_MIN = 60;
 export const TICK_MS = 60_000;
 
-/** เรียกเว็บให้เลื่อน event ถาวรไปรอบถัดไป (ใช้ logic เดียวกับตอนเปิดหน้า) */
-async function rollover() {
+/** เรียก endpoint ภายในของเว็บ (Bearer RENDER_SECRET) — logic อยู่ฝั่งเว็บที่เดียว */
+async function callWeb(path: string) {
   try {
-    const res = await fetch(`${env.webUrl}/api/internal/rollover`, {
+    const res = await fetch(`${env.webUrl}${path}`, {
       method: 'POST',
       headers: { authorization: `Bearer ${env.renderSecret}` },
       signal: AbortSignal.timeout(20_000)
     });
-    if (!res.ok) console.error('[scheduler] rollover http', res.status);
+    if (!res.ok) console.error('[scheduler]', path, 'http', res.status);
   } catch (e) {
-    console.error('[scheduler] rollover failed:', (e as Error).message);
+    console.error('[scheduler]', path, 'failed:', (e as Error).message);
   }
 }
+/** เลื่อน event ถาวรไปรอบถัดไป (ใช้ logic เดียวกับตอนเปิดหน้า) */
+const rollover = () => callWeb('/api/internal/rollover');
+/** เตือนแพ็กเกจใกล้หมดอายุ 3 วัน / 1 วัน (อีเมล + Discord) */
+const billingReminders = () => callWeb('/api/internal/billing-reminders');
 
 /**
  * เตือนก่อน event เริ่ม 60 นาที: ข้อความ (ห้อง notify) + รูปปาร์ตี้ (ห้องรูป ถ้าไม่ตั้งใช้ห้อง notify)
@@ -35,7 +39,14 @@ export async function reminders(queue: Queue, now = new Date()) {
     .select({ ev: guildEvent, notify: guildProfile.notifyChannelId, profile: guildProfile })
     .from(guildEvent)
     .innerJoin(guildProfile, eq(guildProfile.organizationId, guildEvent.organizationId))
-    .where(and(gt(guildEvent.startsAt, now), lte(guildEvent.startsAt, horizon), inArray(guildEvent.status, ['open', 'closed'])));
+    .where(
+      and(
+        gt(guildEvent.startsAt, now),
+        lte(guildEvent.startsAt, horizon),
+        inArray(guildEvent.status, ['open', 'closed']),
+        guildActiveSql(guildEvent.organizationId, now) // แพ็กเกจหมดอายุ → บอทหยุดเตือน/ส่งรูปให้กิลด์นี้
+      )
+    );
 
   for (const { ev, notify, profile } of due) {
     if (!notify || !ev.startsAt) continue;
@@ -81,6 +92,7 @@ export function startScheduler() {
     try {
       await rollover();
       await reminders(queue);
+      await billingReminders();
     } catch (e) {
       console.error('[scheduler] tick error:', e);
     } finally {

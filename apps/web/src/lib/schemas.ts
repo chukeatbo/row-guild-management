@@ -64,6 +64,12 @@ export const guildProfileSchema = z.object({
 	auctionChannelId: discordRef('channel')
 });
 
+/** ผู้ใช้สร้างกิลด์เอง (ทดลองใช้ / หลังชำระเงิน) — slug สร้างให้อัตโนมัติ */
+export const newGuildSchema = z.object({
+	name: nameSchema,
+	server: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().max(60).optional())
+});
+
 export const createGuildSchema = z.object({
 	name: nameSchema,
 	slug: z

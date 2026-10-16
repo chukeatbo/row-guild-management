@@ -29,5 +29,7 @@ export const msg = {
   award: (p: { ign: string; item: string }) => `🎁 **${p.item}** → **${p.ign}**`,
   reminder: (p: { event: string; when: string; assigned: number; onLeave: number }) =>
     `⏰ อีก 1 ชั่วโมงถึง **${p.event}** — ${p.when}\nจัดปาร์ตี้แล้ว ${p.assigned} คน · ลา ${p.onLeave} คน`,
+  billingReminder: (p: { daysLeft: number; when: string; renewUrl: string }) =>
+    `⚠️ แพ็กเกจของกิลด์จะหมดอายุใน **${p.daysLeft} วัน** — ${p.when}\nหัวกิลด์ต่ออายุได้ที่ ${p.renewUrl} (หมดอายุแล้วจะใช้ฟีเจอร์ของกิลด์และบอทไม่ได้จนกว่าจะต่ออายุ)`,
   imageCaption: { event: (name: string, field?: 'main' | 'sub') => `📋 ปาร์ตี้ **${name}**${field ? ` · ${field === 'main' ? 'สนามบน' : 'สนามล่าง'}` : ''}`, auction: () => '🔨 คิวประมูลล่าสุด' }
 };

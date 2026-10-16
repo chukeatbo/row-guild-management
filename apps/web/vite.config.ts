@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => {
 	Object.assign(process.env, loadEnv(mode, '../..', ''));
 
 	return {
+		// dev: ให้ Omise ยิง webhook เข้ามาผ่าน ngrok ได้ (ดู docs/SETUP.md) — โดเมนขึ้นต้นด้วย . = ทุก subdomain
+		server: { allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.app'] },
 		plugins: [
 			tailwindcss(),
 			sveltekit({

@@ -1,5 +1,5 @@
 import { can, isSuperAdmin } from '@row/auth/permissions';
-import { guildProfile, member, organization } from '@row/db';
+import { getGuildAccess, guildProfile, member, organization, type GuildAccess } from '@row/db';
 import { error, fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import type { MessageKey } from '#lib/i18n/index.ts';
@@ -22,6 +22,8 @@ export interface AppContext {
 	guild: GuildSummary | null;
 	/** role ที่มีผลจริง: Super Admin ถือเป็น owner ของทุกกิลด์ */
 	role: string | null;
+	/** สิทธิ์ใช้งาน (แพ็กเกจ) ของกิลด์ปัจจุบัน — null = ไม่มีกิลด์ */
+	access: GuildAccess | null;
 }
 
 /** โหลดบริบทผู้ใช้ + กิลด์ปัจจุบัน (กิลด์เลือกจาก cookie แล้วตรวจกับ membership เสมอ) */
@@ -55,14 +57,21 @@ export async function loadContext(event: RequestEvent): Promise<AppContext | nul
 	const wanted = event.cookies.get(GUILD_COOKIE);
 	const guild = guilds.find((g) => g.id === wanted) ?? guilds[0] ?? null;
 	const role = guild ? (isSuper ? 'owner' : guild.role) : null;
-	return { user, isSuper, guilds, guild, role };
+	const access = guild ? await getGuildAccess(db, guild.id) : null;
+	return { user, isSuper, guilds, guild, role, access };
 }
 
-/** ต้องล็อกอิน */
+/** ต้องล็อกอิน — ยังไม่ login พาไปหน้า login แล้วกลับมาหน้าเดิม (`?next=`) */
 export async function requireUser(event: RequestEvent): Promise<AppContext> {
 	const ctx = await loadContext(event);
-	if (!ctx) redirect(303, '/login');
+	if (!ctx) redirect(303, loginUrl(event.url));
 	return ctx;
+}
+
+/** หน้า login ที่จะพากลับมา `url` หลัง login (เฉพาะ GET — POST กลับไปหน้าเดิมไม่ได้) */
+export function loginUrl(url: URL) {
+	const next = url.pathname + url.search;
+	return next === '/' || next.startsWith('/login') ? '/login' : `/login?next=${encodeURIComponent(next)}`;
 }
 
 /** ต้องอยู่ในกิลด์ และ (ถ้าระบุ) มีสิทธิ์ resource:action */
@@ -72,6 +81,8 @@ export async function requireGuild(
 ) {
 	const ctx = await requireUser(event);
 	if (!ctx.guild) error(403, 'no guild');
+	// แพ็กเกจหมดอายุ → ใช้ฟีเจอร์ของกิลด์ไม่ได้ (ข้อมูลยังอยู่) จนกว่าจะต่ออายุ; Super Admin ผ่านเสมอ
+	if (!ctx.isSuper && ctx.access?.state === 'expired') redirect(303, '/billing');
 	if (permission && !ctx.isSuper && !can(ctx.role, ...permission)) error(403, 'forbidden');
 	return { ...ctx, guild: ctx.guild };
 }

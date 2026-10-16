@@ -1,7 +1,7 @@
 # Billing (Omise / Opn Payments)
 
 กิลด์ซื้อ **แพ็กเกจ** เพื่อใช้งานระบบ — landing page แสดงแพ็กเกจ + ให้จ่ายผ่าน Omise
-Schema อยู่ที่ `packages/db/src/schema/billing.ts` (migration `0009`) ตอนนี้มี **เฉพาะตารางข้อมูล** ยังไม่มี checkout / webhook / การบังคับสิทธิ์
+Schema อยู่ที่ `packages/db/src/schema/billing.ts` (migration `0009`–`0013`) — checkout / webhook / การบังคับสิทธิ์ ดูหัวข้อ "Checkout ในเว็บ"
 
 ## ER
 
@@ -57,17 +57,35 @@ landing: เลือกแพ็กเกจ → login Discord → เลือ
 - ข้อมูลการเงินลบไม่ได้โดยไม่ตั้งใจ: FK ไป `user`/`packages`/`orders` เป็น `restrict`; ลบกิลด์แล้ว order ยังอยู่ (`organization_id` = null) แต่ subscription ของกิลด์นั้นถูกลบตาม (cascade)
 - ทุก mutation สำคัญเขียน `audit_log` ต่อ (สร้าง/แก้แพ็กเกจ, คืนเงิน, ให้สิทธิ์เอง)
 
-## เรื่องที่ต้องคุยก่อนทำ checkout
-1. **ใครสร้างกิลด์?** ตอนนี้สร้างกิลด์ได้เฉพาะ Super Admin (หน้า Admin) — ถ้าให้คนซื้อแล้วใช้เลย ต้องมี "สร้างกิลด์เอง" หลังจ่าย (ผม model `orders.organization_id` เป็น nullable รองรับไว้แล้ว)
-2. **ต่ออายุอัตโนมัติ หรือซื้อซ้ำเอง?** PromptPay ตัดซ้ำอัตโนมัติไม่ได้ (บัตรทำได้ผ่าน Omise Schedule/Customer แต่ยังไม่ได้ออกแบบ) — ตอนนี้ออกแบบเป็น "จ่ายล่วงหน้าทีละรอบ + บอทเตือนใกล้หมดอายุ"
-3. **กิลด์ที่หมดอายุ** ทำอะไร? (อ่านอย่างเดียว / ล็อกทั้งหมด / ลดเหลือแพ็กเกจฟรี) — ตัดสินใจก่อนเขียนตัวบังคับสิทธิ์
-4. **มีแพ็กเกจฟรี/ทดลองใช้ไหม?** ถ้ามี `packages.priceSatang = 0` ได้ (order amount 0 ข้าม Omise ไม่สร้าง payment)
-5. **ใบกำกับภาษี/ใบเสร็จ** ต้องออกไหม (ตอนนี้มีแค่ `billingInfo` เก็บชื่อ/เลขผู้เสียภาษี/ที่อยู่ ยังไม่มีเลขที่ใบกำกับ)
-6. **ส่วนลด/โค้ด** — ยังไม่ได้ทำตาราง (เพิ่ม `coupon` + `orders.discountSatang` ได้ทีหลังโดยไม่กระทบตารางเดิม)
-7. **landing อ่านแพ็กเกจยังไง** — อ่าน DB ผ่าน `@row/db` ตรงๆ หรือเรียก `GET /api/packages` ของเว็บ (แนะนำแบบหลัง: landing ไม่ต้องถือ `DATABASE_URL`)
+## Checkout ในเว็บ (implement แล้ว — ผู้ใช้ตกลงสเปก 2026-10-16)
 
-## สิ่งที่ยังไม่ได้ทำ (ตั้งใจ)
-หน้า Admin จัดการแพ็กเกจ/ออเดอร์, endpoint สร้างออเดอร์/webhook, ตัวบังคับ limits ในระบบ, job หมดอายุ/เตือน, seed แพ็กเกจ (ยังไม่ทราบราคา/สิทธิ์จริง)
+landing อยู่ในเว็บเดียวกัน (`routes/(marketing)`) จึงใช้ session ของผู้ใช้โดยตรง ไม่ผ่าน `LANDING_API_KEY` (API `/api/orders` ยังอยู่สำหรับระบบภายนอก)
+
+| เรื่อง | ข้อตกลง |
+|---|---|
+| แพ็กเกจ | อยู่ในตาราง `packages` (seed: `pnpm db:seed` → `trial` ฟรี 14 วัน, `guild-monthly` ฿299/30 วัน, `limits.maxMembers` 150) — landing render จาก DB (`(marketing)/+layout.server.ts`), คำแปลใน `translations` |
+| `packages.is_trial` | ทดลองใช้: ไม่ผ่าน Omise ไม่ต้องกรอกอีเมล **1 ครั้งต่อผู้ใช้ (Discord)** — ตรวจหลัง `pg_advisory_xact_lock` ต่อผู้ใช้; `createOrder` ปฏิเสธแพ็กเกจทดลอง |
+| `packages.is_featured` | ป้าย "ยอดนิยม" บน landing |
+| ทางเข้า | ปุ่มแพ็กเกจ → `/start/<code>` (ต้อง login; `requireUser` พาไป `/login?next=` แล้วกลับมา) → ทดลอง: ฟอร์มสร้างกิลด์ / ต้องจ่าย: `/checkout/<code>` |
+| หน้า checkout | เลือก "สร้างกิลด์ใหม่" หรือ "ต่ออายุกิลด์ที่ฉันเป็น owner" (`?guild=` เลือกไว้ให้), **อีเมลรับใบเสร็จบังคับ** (เติมอีเมลล่าสุด/Discord), ช่องทางจาก Omise Capability API กรองด้วย `lib/payment-methods.ts` |
+| สร้าง charge | ฝั่งเซิร์ฟเวอร์เท่านั้น (`lib/server/checkout.ts` `startPayment` → `createOrder` + `createCharge`); บัตร: Omise.js แปลงเป็น token ใน browser (ช่องบัตรไม่มี `name` ไม่ถูกส่งมาเซิร์ฟเวอร์); ผลลัพธ์มี QR → แสดงในหน้า, มี `authorize_uri` → พาไปธนาคาร/3DS |
+| หน้าสถานะ | `/checkout/order/<id>` (= `return_uri`) poll ทุก 3 วิ และดึง charge ล่าสุดจาก Omise เองด้วย (ไม่ต้องรอ webhook) |
+| สร้างกิลด์หลังจ่าย | `claimOrder`: ล็อกแถวออเดอร์, ต้องเป็นผู้ซื้อ, ออเดอร์ `paid` และ `granted_at` ว่าง → สร้างกิลด์ (`billing_exempt=false`) + ให้สิทธิ์ |
+| `orders.granted_at` | ให้สิทธิ์แล้ว — กัน claim ซ้ำแม้กิลด์ถูกลบภายหลัง |
+| อีเมล | `lib/server/receipt.ts` ส่งครั้งเดียวต่อออเดอร์ (`receipt_sent_at`) หลัง `applyCharge` ได้ `paid` (webhook หรือหน้าสถานะ); ซื้อกิลด์ใหม่ → ปุ่ม `/claim?token=` (token สุ่ม เก็บแค่ SHA-256, อายุ 24 ชม., ใช้ครั้งเดียว, ต้อง login Discord คนเดียวกับผู้ซื้อ); ต่ออายุ → ปุ่มไปหน้าภาพรวม; ลิงก์ใช้ `PUBLIC_APP_URL`/`BETTER_AUTH_URL` (ไม่ใช่ origin ของ webhook) |
+| ลิงก์หมดอายุ | หน้าภาพรวมมีแบนเนอร์ "จ่ายแล้วแต่ยังไม่ได้สร้างกิลด์" (`unclaimedOrders`) |
+
+### สิทธิ์ใช้งาน (entitlement) — `packages/db/src/entitlement.ts` (เว็บ + บอทใช้ร่วม)
+- `guild_profile.billing_exempt = true` → ใช้ได้ไม่จำกัด: กิลด์ที่ Super Admin สร้าง, กิลด์ที่มีก่อนระบบ billing (migration `0011`), Super Admin สลับได้ที่หน้า Admin (ไอคอน ∞)
+- ไม่ exempt → ต้องมี `guild_subscription` active ที่ `starts_at <= now < ends_at`
+- หมดอายุ: `requireGuild` (และหน้าภาพรวม) พาไป `/billing` — ข้อมูลไม่ลบ, owner เห็นปุ่มต่ออายุ, สมาชิกเห็น "ติดต่อหัวกิลด์"; Super Admin ผ่านเสมอ; บอทหยุดเตือน event ของกิลด์นั้น (`guildActiveSql` ใน scheduler)
+- `limits.maxMembers` บังคับตอนเพิ่มตัวละคร (`error.memberLimit`)
+
+### เตือนใกล้หมดอายุ — `lib/server/billing-reminders.ts`
+บอทเรียก `POST /api/internal/billing-reminders` ทุกนาที (Bearer `RENDER_SECRET`): ดูแถวสิทธิ์ที่หมดช้าสุดของแต่ละกิลด์ → เหลือ ≤ 3 วัน / ≤ 1 วัน ส่ง Discord (job `billing_reminder` → ห้องแจ้งเตือน) + อีเมลล่าสุดที่ใช้ซื้อให้กิลด์นั้น (ทดลองใช้ = Discord อย่างเดียว); กันซ้ำด้วย `guild_subscription.remind_3d_sent_at` / `remind_1d_sent_at`
+
+### ยังไม่ทำ
+ตัดบัตรต่ออายุอัตโนมัติ (แสดง "เร็วๆ นี้" ในแพ็กเกจ), หน้า Admin จัดการแพ็กเกจ/ออเดอร์/คืนเงิน/ให้วันใช้งานเอง, ใบกำกับภาษี, job ตั้งออเดอร์ค้างเป็น expired, ช่องทางที่ต้องกรอกข้อมูลเพิ่ม (ผ่อน/direct debit/Atome/บาร์โค้ด)
 
 ---
 

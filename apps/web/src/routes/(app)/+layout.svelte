@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { CalendarDays, CalendarX, Gavel, History, LayoutDashboard, LogOut, Shield, ShieldCheck, Swords, Users } from '@lucide/svelte';
+	import { CalendarDays, CreditCard, CalendarX, Gavel, History, LayoutDashboard, LogOut, Shield, ShieldCheck, Swords, Users } from '@lucide/svelte';
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { authClient } from '#lib/auth-client.ts';
@@ -21,6 +21,7 @@
 			{ href: '/auction', key: 'nav.auction', icon: Gavel, show: !!data.guild },
 			{ href: '/guild', key: 'nav.guild', icon: Swords, show: !!data.guild },
 			{ href: '/audit', key: 'nav.audit', icon: History, show: !!data.guild && data.canReadAudit },
+			{ href: '/billing', key: 'nav.billing', icon: CreditCard, show: !!data.guild && (data.isSuper || data.role === 'owner') },
 			{ href: '/admin', key: 'nav.admin', icon: ShieldCheck, show: data.isSuper }
 		].filter((n) => n.show) as { href: string; key: MessageKey; icon: typeof Users }[]
 	);

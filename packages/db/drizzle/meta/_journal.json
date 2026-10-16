@@ -71,6 +71,34 @@
       "when": 1792159026348,
       "tag": "0009_handy_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792164263627,
+      "tag": "0010_chemical_scrambler",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792164481686,
+      "tag": "0011_strong_lila_cheney",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792164962522,
+      "tag": "0012_elite_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792165448150,
+      "tag": "0013_known_rattler",
+      "breakpoints": true
     }
   ]
 }

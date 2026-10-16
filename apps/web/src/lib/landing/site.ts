@@ -29,14 +29,7 @@ export const site = {
 		phone: '0X-XXX-XXXX',
 		/** วันที่มีผลบังคับใช้ของเอกสาร (YYYY-MM-DD) */
 		effectiveDate: '2026-10-16'
-	},
-	/**
-	 * ราคา (บาท) — ⚠️ ค่าตัวอย่าง ยังไม่ใช่ราคาจริง
-	 * null = "ติดต่อสอบถาม"
-	 */
-	prices: {
-		trial: 0,
-		guild: 299,
-		pro: 590
-	} as Record<'trial' | 'guild' | 'pro', number | null>
+	}
+
+	/* ราคา/แพ็กเกจ: อยู่ในฐานข้อมูล (ตาราง packages, seed ที่ packages/db/src/seed.ts) ไม่ได้อยู่ที่นี่แล้ว */
 };

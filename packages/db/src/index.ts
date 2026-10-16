@@ -3,6 +3,7 @@ import pg from 'pg';
 import * as schema from './schema/index';
 
 export * from './schema/index';
+export * from './entitlement';
 export { schema };
 
 export function createDb(url = process.env.DATABASE_URL) {

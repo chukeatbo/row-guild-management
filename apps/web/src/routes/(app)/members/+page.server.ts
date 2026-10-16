@@ -1,6 +1,6 @@
 import { can } from '@row/auth/permissions';
 import { character, member } from '@row/db';
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
 import { formError, isUniqueViolation, requireGuild } from '#lib/server/guard.ts';
@@ -87,6 +87,12 @@ export const actions: Actions = {
 					targetId: id
 				});
 			} else {
+				// เพดานตัวละครตามแพ็กเกจ (limits.maxMembers; กิลด์ไม่จำกัด/ไม่มีค่า = ไม่ตรวจ)
+				const max = ctx.access?.limits.maxMembers;
+				if (typeof max === 'number') {
+					const [c] = await db.select({ n: count() }).from(character).where(eq(character.organizationId, ctx.guild.id));
+					if ((c?.n ?? 0) >= max) return formError('error.memberLimit', 409);
+				}
 				const [row] = await db
 					.insert(character)
 					.values({ ...values, organizationId: ctx.guild.id, userId })

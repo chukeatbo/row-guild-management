@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Check, Copy, UserX, Users, UsersRound } from '@lucide/svelte';
+	import { Check, Copy, Sparkles, UserX, Users, UsersRound } from '@lucide/svelte';
 	import BarList from '#lib/components/BarList.svelte';
 	import Donut from '#lib/components/Donut.svelte';
 	import { useT } from '#lib/i18n/index.ts';
@@ -25,6 +25,17 @@
 
 <svelte:head><title>{t('nav.dashboard')} · {t('app.name')}</title></svelte:head>
 
+{#each data.unclaimed as u (u.id)}
+	<a
+		href="/checkout/order/{u.id}"
+		class="animate-pop mb-4 flex items-center gap-3 rounded-card border border-primary/40 bg-primary/5 px-4 py-3 text-sm hover:bg-primary/10"
+	>
+		<Sparkles size={18} class="shrink-0 text-primary" />
+		<span class="min-w-0 flex-1"><span class="font-medium">{t('order.unclaimed')}</span> <span class="text-muted-foreground">· {u.name} · {u.orderNo}</span></span>
+		<span class="btn-primary btn-sm shrink-0">{t('start.create')}</span>
+	</a>
+{/each}
+
 {#if data.empty}
 	<div class="card animate-pop mx-auto mt-10 max-w-md text-center">
 		<div class="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent text-accent-foreground">
@@ -40,6 +51,12 @@
 					{#if copied}<Check size={15} />{t('common.copied')}{:else}<Copy size={15} />{t('common.copy')}{/if}
 				</button>
 			</div>
+		</div>
+		<!-- ไม่มีกิลด์: สร้างกิลด์เองได้ (ทดลองใช้ / ซื้อแพ็กเกจ) -->
+		<p class="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">{t('noGuild.orStart')}</p>
+		<div class="mt-3 flex flex-wrap justify-center gap-2">
+			<a href="/start/trial" class="btn-primary"><Sparkles size={15} />{t('noGuild.startTrial')}</a>
+			<a href="/#pricing" class="btn-secondary">{t('noGuild.buy')}</a>
 		</div>
 	</div>
 {:else}

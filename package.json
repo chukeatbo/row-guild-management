@@ -13,6 +13,7 @@
     "db:seed-dev": "pnpm --filter @row/db seed-dev",
     "db:unseed-dev": "pnpm --filter @row/db unseed-dev",
     "auth:generate": "pnpm --filter @row/auth generate",
+    "tunnel": "sh -c 'set -a; . ./.env; set +a; exec ngrok http ${NGROK_DOMAIN:+--url=$NGROK_DOMAIN} 5173'",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

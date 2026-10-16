@@ -3,14 +3,16 @@
 	import LocaleSwitcher from '#lib/components/LocaleSwitcher.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { authClient } from '#lib/auth-client.ts';
+	import { page } from '$app/state';
 	import { useT } from '#lib/i18n/index.ts';
+	import { safeNext } from '#lib/next.ts';
 
 	const t = useT();
 	let loading = $state(false);
 
 	async function login() {
 		loading = true;
-		await authClient.signIn.social({ provider: 'discord', callbackURL: '/dashboard' });
+		await authClient.signIn.social({ provider: 'discord', callbackURL: safeNext(page.url.searchParams.get('next')) });
 	}
 </script>
 

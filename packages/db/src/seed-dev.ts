@@ -66,7 +66,7 @@ const newIgn = () => {
 let [org] = await db.select().from(organization).where(eq(organization.slug, SLUG));
 if (!org) {
   [org] = await db.insert(organization).values({ id: crypto.randomUUID(), name: 'Mock Guild (dev)', slug: SLUG, createdAt: new Date() }).returning();
-  await db.insert(guildProfile).values({ organizationId: org!.id, description: 'กิลด์ทดสอบ — ข้อมูลทั้งหมดเป็นข้อมูลปลอม ลบได้ด้วย pnpm db:unseed-dev', server: 'SEA' });
+  await db.insert(guildProfile).values({ organizationId: org!.id, description: 'กิลด์ทดสอบ — ข้อมูลทั้งหมดเป็นข้อมูลปลอม ลบได้ด้วย pnpm db:unseed-dev', server: 'SEA', billingExempt: true });
 }
 const orgId = org!.id;
 const addMember = async (userId: string, role: string) => {

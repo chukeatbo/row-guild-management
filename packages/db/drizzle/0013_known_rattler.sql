@@ -1,0 +1,2 @@
+ALTER TABLE "guild_subscription" ADD COLUMN "remind_3d_sent_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "guild_subscription" ADD COLUMN "remind_1d_sent_at" timestamp with time zone;

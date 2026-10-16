@@ -1,4 +1,4 @@
-import { createDb, gameClass } from './index';
+import { createDb, gameClass, pkg } from './index';
 
 /**
  * อาชีพ (13 สาย) — ชื่อและไอคอนจาก roworlddb.com/sea/jobs (job id ในวงเล็บ)
@@ -38,4 +38,66 @@ await db
   .onConflictDoNothing({ target: gameClass.name }); // รันซ้ำได้ ไม่ทับที่ Super Admin แก้ไว้
 
 console.log(`Seeded ${CLASSES.length} classes`);
+
+/**
+ * แพ็กเกจที่ขายบน landing (ราคาเป็นสตางค์) — `name`/`description`/`features` หลัก = ภาษาอังกฤษ, ภาษาอื่นอยู่ใน translations
+ * limits.maxMembers = จำนวนตัวละครสูงสุดในกิลด์ที่ระบบบังคับ
+ */
+const GUILD_FEATURES = {
+  th: ['Party Builder GL / Siege / Polarity', 'ระบบลา + ตารางวอร์อัตโนมัติ', 'คิวประมูลกิลด์', 'บอท Discord แจ้งเตือน + ส่งรูป', 'สมาชิกสูงสุด 150 คน', 'ต่ออายุบัตรอัตโนมัติ (เร็วๆ นี้)'],
+  en: ['Party builder for GL / Siege / Polarity', 'Leave requests + automatic schedule', 'Guild auction queue', 'Discord reminders + images', 'Up to 150 members', 'Automatic card renewal (coming soon)'],
+  id: ['Penyusun party GL / Siege / Polarity', 'Izin + jadwal otomatis', 'Antrean lelang guild', 'Pengingat Discord + gambar', 'Hingga 150 anggota', 'Perpanjangan otomatis kartu (segera hadir)'],
+  fil: ['Party builder para sa GL / Siege / Polarity', 'Leave + awtomatikong iskedyul', 'Auction queue ng guild', 'Discord reminder + larawan', 'Hanggang 150 miyembro', 'Awtomatikong renewal sa card (malapit na)'],
+  zh: ['GL / Siege / Polarity 队伍编排', '请假 + 自动日程', '公会拍卖排队', 'Discord 提醒 + 图片', '最多 150 名成员', '信用卡自动续费（即将推出）']
+};
+const TRIAL_FEATURES = {
+  th: ['ทุกฟีเจอร์ของแพ็กเกจ Guild', '1 กิลด์', 'ไม่ต้องจ่ายเงิน ไม่ต้องผูกบัตร', 'ทดลองได้ 1 ครั้งต่อบัญชี Discord'],
+  en: ['Everything in Guild', '1 guild', 'No payment, no card required', 'One trial per Discord account'],
+  id: ['Semua fitur paket Guild', '1 guild', 'Tanpa pembayaran, tanpa kartu', 'Satu kali uji coba per akun Discord'],
+  fil: ['Lahat ng feature ng Guild', '1 guild', 'Walang bayad, walang card', 'Isang trial bawat Discord account'],
+  zh: ['包含 Guild 套餐全部功能', '1 个公会', '无需付款、无需绑卡', '每个 Discord 账号限试用一次']
+};
+const PACKAGES = [
+  {
+    code: 'trial',
+    name: 'Trial',
+    description: 'Every feature for 14 days',
+    translations: {
+      th: { name: 'ทดลองใช้', description: 'ลองครบทุกฟีเจอร์ 14 วัน', features: TRIAL_FEATURES.th },
+      en: { name: 'Trial', description: 'Every feature for 14 days', features: TRIAL_FEATURES.en },
+      id: { name: 'Uji coba', description: 'Semua fitur selama 14 hari', features: TRIAL_FEATURES.id },
+      fil: { name: 'Trial', description: 'Lahat ng feature sa loob ng 14 araw', features: TRIAL_FEATURES.fil },
+      zh: { name: '试用', description: '14 天体验全部功能', features: TRIAL_FEATURES.zh }
+    },
+    features: TRIAL_FEATURES.en,
+    priceSatang: 0,
+    durationDays: 14,
+    limits: { maxMembers: 150 },
+    isTrial: true,
+    isFeatured: false,
+    sortOrder: 0
+  },
+  {
+    code: 'guild-monthly',
+    name: 'Guild',
+    description: 'For guilds that fight every week',
+    translations: {
+      th: { name: 'Guild', description: 'สำหรับกิลด์ที่ลงวอร์ทุกสัปดาห์', features: GUILD_FEATURES.th },
+      en: { name: 'Guild', description: 'For guilds that fight every week', features: GUILD_FEATURES.en },
+      id: { name: 'Guild', description: 'Untuk guild yang perang tiap minggu', features: GUILD_FEATURES.id },
+      fil: { name: 'Guild', description: 'Para sa mga guild na lumalaban linggo-linggo', features: GUILD_FEATURES.fil },
+      zh: { name: 'Guild', description: '适合每周参战的公会', features: GUILD_FEATURES.zh }
+    },
+    features: GUILD_FEATURES.en,
+    priceSatang: 29_900,
+    durationDays: 30,
+    limits: { maxMembers: 150 },
+    isTrial: false,
+    isFeatured: true,
+    sortOrder: 10
+  }
+];
+
+await db.insert(pkg).values(PACKAGES).onConflictDoNothing({ target: pkg.code }); // รันซ้ำได้ ไม่ทับที่ Super Admin แก้ไว้
+console.log(`Seeded ${PACKAGES.length} packages`);
 process.exit(0);

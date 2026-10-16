@@ -1,5 +1,5 @@
-import { boss, gameClass, guildProfile, member, organization } from '@row/db';
-import { asc, count, eq } from 'drizzle-orm';
+import { boss, gameClass, guildProfile, guildSubscription, member, organization } from '@row/db';
+import { asc, count, eq, max } from 'drizzle-orm';
 import { writeAudit } from '#lib/server/audit.ts';
 import { db } from '#lib/server/db.ts';
 import { formError, isUniqueViolation, requireSuperAdmin } from '#lib/server/guard.ts';
@@ -18,15 +18,23 @@ export const load: PageServerLoad = async (event) => {
 				name: organization.name,
 				slug: organization.slug,
 				suspended: guildProfile.suspended,
+				billingExempt: guildProfile.billingExempt,
 				members: count(member.id)
 			})
 			.from(organization)
 			.leftJoin(guildProfile, eq(guildProfile.organizationId, organization.id))
 			.leftJoin(member, eq(member.organizationId, organization.id))
-			.groupBy(organization.id, guildProfile.suspended)
+			.groupBy(organization.id, guildProfile.suspended, guildProfile.billingExempt)
 			.orderBy(asc(organization.name))
 	]);
-	return { classes, bosses, guilds };
+	// วันหมดอายุของแพ็กเกจแต่ละกิลด์ (ปลายสุดของสิทธิ์ที่ active) — กิลด์ billing_exempt ไม่ต้องใช้
+	const subs = await db
+		.select({ orgId: guildSubscription.organizationId, endsAt: max(guildSubscription.endsAt) })
+		.from(guildSubscription)
+		.where(eq(guildSubscription.status, 'active'))
+		.groupBy(guildSubscription.organizationId);
+	const ends = new Map(subs.map((r) => [r.orgId, r.endsAt?.toISOString() ?? null]));
+	return { classes, bosses, guilds: guilds.map((g) => ({ ...g, planEndsAt: ends.get(g.id) ?? null, hasPlan: ends.has(g.id) })) };
 };
 
 const idOf = (fd: FormData) => ((fd.get('id') as string) || undefined);
@@ -84,13 +92,28 @@ export const actions: Actions = {
 			await db.transaction(async (tx) => {
 				await tx.insert(organization).values({ id: orgId, name, slug, createdAt: new Date() });
 				await tx.insert(member).values({ id: crypto.randomUUID(), organizationId: orgId, userId: ownerId, role: 'owner', createdAt: new Date() });
-				await tx.insert(guildProfile).values({ organizationId: orgId });
+				await tx.insert(guildProfile).values({ organizationId: orgId, billingExempt: true }); // Super Admin สร้าง = ใช้ได้ไม่จำกัด
 			});
 		} catch (e) {
 			if (isUniqueViolation(e)) return formError('error.duplicate');
 			throw e;
 		}
 		await writeAudit({ organizationId: orgId, actorUserId: ctx.user.id, action: 'guild.create', targetType: 'organization', targetId: orgId, detail: { name, slug, ownerId } });
+		return { ok: true };
+	},
+
+	/** สลับ "ใช้ได้ไม่จำกัด" (ไม่ต้องมีแพ็กเกจ) ของกิลด์ */
+	toggleExempt: async (event) => {
+		const ctx = await requireSuperAdmin(event);
+		const orgId = idOf(await event.request.formData());
+		if (!orgId) return formError('error.invalid');
+		const [row] = await db.select().from(guildProfile).where(eq(guildProfile.organizationId, orgId));
+		const billingExempt = !(row?.billingExempt ?? false);
+		await db
+			.insert(guildProfile)
+			.values({ organizationId: orgId, billingExempt })
+			.onConflictDoUpdate({ target: guildProfile.organizationId, set: { billingExempt } });
+		await writeAudit({ organizationId: orgId, actorUserId: ctx.user.id, action: billingExempt ? 'guild.billing_exempt' : 'guild.billing_unexempt', targetType: 'organization', targetId: orgId });
 		return { ok: true };
 	},
 

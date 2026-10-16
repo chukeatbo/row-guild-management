@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Ban, CircleCheck, Pencil, Plus } from '@lucide/svelte';
+	import { Ban, CircleCheck, Infinity as InfinityIcon, Pencil, Plus } from '@lucide/svelte';
 	import ClassBadge from '#lib/components/ClassBadge.svelte';
 	import Modal from '#lib/components/Modal.svelte';
-	import { useT, type MessageKey } from '#lib/i18n/index.ts';
+	import { formatDateTime } from '#lib/datetime.ts';
+	import { useLocale, useT, type MessageKey } from '#lib/i18n/index.ts';
+	import { useTimezone } from '#lib/timezone.ts';
 
 	let { data } = $props();
 	const t = useT();
+	const locale = useLocale();
+	const tz = useTimezone();
 
 	type Tab = 'classes' | 'bosses' | 'guilds';
 	let tab = $state<Tab>('classes');
@@ -75,15 +79,27 @@
 				{/each}
 			</tbody>
 		{:else if tab === 'guilds'}
-			<thead><tr><th>{t('guild.name')}</th><th>{t('admin.slug')}</th><th class="text-right">{t('nav.members')}</th><th></th></tr></thead>
+			<thead><tr><th>{t('guild.name')}</th><th>{t('admin.slug')}</th><th>{t('admin.plan')}</th><th class="text-right">{t('nav.members')}</th><th></th></tr></thead>
 			<tbody>
 				{#each data.guilds as g (g.id)}
 					<tr class:opacity-60={g.suspended}>
 						<td class="font-medium">{g.name}{#if g.suspended}<span class="ml-2 text-xs text-danger">{t('admin.suspended')}</span>{/if}</td>
 						<td class="font-mono text-xs text-muted-foreground">{g.slug}</td>
+						<td class="text-xs whitespace-nowrap">
+							{#if g.billingExempt}<span class="text-success">{t('billing.statusExempt')}</span>
+							{:else if g.planEndsAt && new Date(g.planEndsAt) > new Date()}{formatDateTime(g.planEndsAt, locale(), tz())}
+							{:else if g.hasPlan && !g.planEndsAt}<span class="text-success">{t('billing.statusForever')}</span>
+							{:else}<span class="text-danger">{t('billing.statusExpired')}</span>{/if}
+						</td>
 						<td class="text-right tabular-nums">{g.members}</td>
-						<td class="text-right">
-							<form method="POST" action="?/toggleSuspend" use:enhance>
+						<td class="text-right whitespace-nowrap">
+							<form method="POST" action="?/toggleExempt" use:enhance class="inline">
+								<input type="hidden" name="id" value={g.id} />
+								<button class="btn-ghost btn-sm {g.billingExempt ? 'text-success' : ''}" title={t('admin.toggleExempt')} aria-label={t('admin.toggleExempt')}>
+									<InfinityIcon size={15} />
+								</button>
+							</form>
+							<form method="POST" action="?/toggleSuspend" use:enhance class="inline">
 								<input type="hidden" name="id" value={g.id} />
 								<button class="btn-ghost btn-sm" aria-label="suspend">
 									{#if g.suspended}<CircleCheck size={15} class="text-success" />{:else}<Ban size={15} />{/if}

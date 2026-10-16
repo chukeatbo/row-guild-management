@@ -66,3 +66,19 @@ pnpm typecheck
 **ซิงก์ชื่อจาก Discord (ไม่บังคับ):** Developer Portal → Bot → Privileged Gateway Intents → เปิด **Server Members Intent** แล้วตั้ง Discord server ID ที่หน้า Guild; ถ้าไม่เปิด บอทจะ log เตือนตอนเริ่มแล้วทำงานส่วนอื่นต่อ (ปิดการเชื่อมด้วย `DISCORD_GATEWAY=off`)
 
 bot ทำ: worker รับงานจากเว็บ (ส่งรูป, แจ้งลา, แจ้งผู้ได้ไอเทม) + scheduler ทุกนาที (เลื่อนรอบ event ผ่าน `POST /api/internal/rollover`, เตือนก่อนเริ่ม 60 นาที พร้อมรูปปาร์ตี้)
+
+## ชำระเงิน (Omise) + อีเมล
+ใส่ใน `.env` (ดูตัวอย่างใน `.env.example`): `OMISE_PUBLIC_KEY`, `OMISE_SECRET_KEY`, `OMISE_WEBHOOK_TOKEN`, `SMTP_*`, `MAIL_FROM`
+- **Gmail SMTP**: เปิด 2-Step Verification → สร้าง App Password ที่ https://myaccount.google.com/apppasswords (ใช้รหัสผ่านปกติไม่ได้)
+- seed แพ็กเกจ: `pnpm db:seed` (ไม่ทับค่าที่แก้ใน DB แล้ว)
+
+### ทดสอบ webhook บนเครื่อง (ngrok)
+```bash
+brew install ngrok
+ngrok config add-authtoken <token>   # dashboard.ngrok.com → Your Authtoken (ครั้งเดียว)
+pnpm dev:web                          # terminal 1
+pnpm tunnel                           # terminal 2 — ใช้ NGROK_DOMAIN ใน .env (static domain ฟรี) ถ้ามี
+```
+Omise Dashboard (Test mode) → Webhooks → `https://<NGROK_DOMAIN>/api/webhooks/omise?token=<OMISE_WEBHOOK_TOKEN>`
+เปิดเว็บที่ `localhost:5173` ได้ตามปกติ (ngrok ใช้แค่ให้ Omise ยิงเข้ามา — Vite อนุญาตโดเมน ngrok ไว้แล้วใน `server.allowedHosts`)
+ไม่มี ngrok ก็ทดสอบได้: หน้าสถานะออเดอร์ดึงผลจาก Omise เองทุก 3 วินาที; PromptPay ใน test mode กด "Mark as paid" ที่ charge ใน Omise Dashboard
